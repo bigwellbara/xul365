@@ -1,0 +1,275 @@
+// ============================================
+// TENANT DATABASE SCHEMA
+// Each school gets their own copy of this
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/tenant"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("TENANT_DATABASE_URL")
+}
+
+// ---- STUDENT ----
+model Student {
+  id             String      @id @default(cuid())
+  firstName      String
+  lastName       String
+  dateOfBirth    DateTime
+  gender         Gender
+  gradeLevel     GradeLevel
+  enrollmentDate DateTime    @default(now())
+  status         StudentStatus @default(ACTIVE)
+
+  // Parent contact stored as JSON
+  parentContact  Json
+
+  enrollments  Enrollment[]
+  attendance   AttendanceRecord[]
+  invoices     Invoice[]
+
+  @@map("students")
+}
+
+// ---- TEACHER ----
+model Teacher {
+  id        String        @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String        @unique
+  phone     String
+  subjects  Json
+  status    TeacherStatus @default(ACTIVE)
+  joinedAt  DateTime      @default(now())
+
+  classes Class[]
+
+  @@map("teachers")
+}
+
+// ---- CLASS ----
+model Class {
+  id           String     @id @default(cuid())
+  name         String
+  gradeLevel   GradeLevel
+  teacherId    String
+  academicYear String
+  capacity     Int        @default(40)
+
+  teacher     Teacher      @relation(fields: [teacherId], references: [id])
+  enrollments Enrollment[]
+  attendance  AttendanceRecord[]
+  timetable   Timetable[]
+
+  @@map("classes")
+}
+
+// ---- ENROLLMENT ----
+model Enrollment {
+  id         String   @id @default(cuid())
+  studentId  String
+  classId    String
+  enrolledAt DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id])
+  class   Class   @relation(fields: [classId], references: [id])
+
+  // A student cannot be enrolled twice in the same class
+  @@unique([studentId, classId])
+  @@map("enrollments")
+}
+
+// ---- ATTENDANCE ----
+model AttendanceRecord {
+  id         String           @id @default(cuid())
+  studentId  String
+  classId    String
+  date       DateTime         @db.Date
+  status     AttendanceStatus
+  recordedBy String
+  createdAt  DateTime         @default(now())
+
+  student Student @relation(fields: [studentId], references: [id])
+  class   Class   @relation(fields: [classId], references: [id])
+
+  @@unique([studentId, classId, date])
+  @@map("attendance_records")
+}
+
+// ---- SUBJECT ----
+model Subject {
+  id        String @id @default(cuid())
+  name      String
+  code      String @unique
+  gradeLevel GradeLevel
+
+  timetable Timetable[]
+  examResults ExamResult[]
+
+  @@map("subjects")
+}
+
+// ---- TIMETABLE ----
+model Timetable {
+  id        String    @id @default(cuid())
+  classId   String
+  subjectId String
+  dayOfWeek DayOfWeek
+  startTime String
+  endTime   String
+
+  class   Class   @relation(fields: [classId], references: [id])
+  subject Subject @relation(fields: [subjectId], references: [id])
+
+  @@map("timetable")
+}
+
+// ---- EXAM ----
+model Exam {
+  id           String   @id @default(cuid())
+  name         String
+  academicYear String
+  term         Term
+  gradeLevel   GradeLevel
+  startDate    DateTime
+  endDate      DateTime
+
+  results ExamResult[]
+
+  @@map("exams")
+}
+
+// ---- EXAM RESULT ----
+model ExamResult {
+  id        String @id @default(cuid())
+  examId    String
+  studentId String
+  subjectId String
+  marks     Decimal @db.Decimal(5, 2)
+  grade     String
+  comments  String? @db.Text
+
+  exam    Exam    @relation(fields: [examId], references: [id])
+  subject Subject @relation(fields: [subjectId], references: [id])
+
+  @@unique([examId, studentId, subjectId])
+  @@map("exam_results")
+}
+
+// ---- INVOICE ----
+model Invoice {
+  id           String        @id @default(cuid())
+  studentId    String
+  academicYear String
+  term         Term
+  items        Json
+  totalAmountUsd Decimal     @db.Decimal(10, 2)
+  totalAmountZig Decimal     @db.Decimal(10, 2)
+  status       InvoiceStatus @default(UNPAID)
+  dueDate      DateTime
+  createdAt    DateTime      @default(now())
+
+  student  Student   @relation(fields: [studentId], references: [id])
+  payments Payment[]
+
+  @@map("invoices")
+}
+
+// ---- PAYMENT ----
+model Payment {
+  id          String        @id @default(cuid())
+  invoiceId   String
+  amountPaid  Decimal       @db.Decimal(10, 2)
+  currency    Currency
+  method      PaymentMethod
+  reference   String        @unique
+  status      PaymentStatus @default(PENDING)
+  paidAt      DateTime      @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+
+  @@map("payments")
+}
+
+// ---- ENUMS ----
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum GradeLevel {
+  ECD_A
+  ECD_B
+  GRADE_1
+  GRADE_2
+  GRADE_3
+  GRADE_4
+  GRADE_5
+  GRADE_6
+  GRADE_7
+  FORM_1
+  FORM_2
+  FORM_3
+  FORM_4
+  FORM_5
+  FORM_6
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+  TRANSFERRED
+}
+
+enum TeacherStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+enum Term {
+  TERM_1
+  TERM_2
+  TERM_3
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+}
+
+enum InvoiceStatus {
+  UNPAID
+  PARTIAL
+  PAID
+}
+
+enum Currency {
+  USD
+  ZIG
+}
+
+enum PaymentMethod {
+  ECOCASH
+  PAYNOW
+  BANK_TRANSFER
+  CASH
+}
+
+enum PaymentStatus {
+  PENDING
+  VERIFIED
+  FAILED
+}

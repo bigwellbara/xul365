@@ -1,0 +1,109 @@
+// ============================================
+// MOTHERSHIP DATABASE SCHEMA
+// Central database that tracks all schools
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/mothership"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("MOTHERSHIP_DATABASE_URL")
+}
+
+// ---- TENANT (School) ----
+model Tenant {
+  id                 String             @id @default(cuid())
+  schoolName         String
+  subdomain          String             @unique
+  databaseName       String             @unique
+  subscriptionStatus SubscriptionStatus @default(PENDING)
+  branding           Json
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  subscription  Subscription?
+  payments      MothershipPayment[]
+
+  @@map("tenants")
+}
+
+// ---- SUBSCRIPTION ----
+model Subscription {
+  id               String           @id @default(cuid())
+  tenantId         String           @unique
+  selectedFeatures Json
+  billingCycle     BillingCycle
+  priceUsd         Decimal          @db.Decimal(10, 2)
+  startDate        DateTime
+  endDate          DateTime
+  status           SubscriptionStatus
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("subscriptions")
+}
+
+// ---- PAYMENTS (Subscription payments) ----
+model MothershipPayment {
+  id        String        @id @default(cuid())
+  tenantId  String
+  amountUsd Decimal       @db.Decimal(10, 2)
+  currency  Currency
+  method    PaymentMethod
+  reference String        @unique
+  status    PaymentStatus @default(PENDING)
+  paidAt    DateTime      @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("mothership_payments")
+}
+
+// ---- FEATURE PRICING ----
+model FeaturePricing {
+  id          String  @id @default(cuid())
+  featureKey  String  @unique
+  name        String
+  description String  @db.Text
+  priceUsd    Decimal @db.Decimal(10, 2)
+  isActive    Boolean @default(true)
+
+  @@map("feature_pricing")
+}
+
+// ---- ENUMS ----
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  RESTRICTED
+  SUSPENDED
+  CANCELLED
+  TRIAL
+  EXPIRED
+}
+
+enum BillingCycle {
+  MONTHLY
+  ANNUAL
+}
+
+enum Currency {
+  USD
+  ZIG
+}
+
+enum PaymentMethod {
+  ECOCASH
+  PAYNOW
+  BANK_TRANSFER
+  CASH
+}
+
+enum PaymentStatus {
+  PENDING
+  VERIFIED
+  FAILED
+}
