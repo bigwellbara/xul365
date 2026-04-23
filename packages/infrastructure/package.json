@@ -1,0 +1,18 @@
+{
+  "name": "@xul365/infrastructure",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@xul365/domain": "*",
+    "@xul365/application": "*",
+    "@xul365/database": "*",
+    "@prisma/client": "^5.0.0"
+  }
+}
