@@ -1,7 +1,8 @@
 // ============================================
 // LOGIN PAGE
 // ============================================
-
+import React from "react"
+import Link from "next/link"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -65,11 +66,12 @@ export default function LoginPage() {
         <p className="text-center text-sm text-muted-foreground">
           Don&apos;t have an account?{" "}
           
-            href="/register"
-            className="text-primary font-medium hover:underline"
-          >
-            Register your school
-          </a>
+           <Link
+    href="/register"
+    className="text-primary font-medium hover:underline"
+  >
+    Register your school
+  </Link>
         </p>
 
       </div>

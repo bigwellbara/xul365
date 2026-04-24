@@ -1,7 +1,5 @@
-import type { NextConfig } from "next"
-
-const nextConfig: NextConfig = {
-  // Allow imports from local packages
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   transpilePackages: [
     "@xul365/domain",
     "@xul365/application",
@@ -10,7 +8,6 @@ const nextConfig: NextConfig = {
     "@xul365/ui",
   ],
 
-  // Image domains for school logos
   images: {
     remotePatterns: [
       {
@@ -24,7 +21,6 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // Security headers
   async headers() {
     return [
       {

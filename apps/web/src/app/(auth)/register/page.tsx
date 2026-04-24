@@ -3,6 +3,8 @@
 // Step 1 of onboarding - School registration
 // ============================================
 
+import React from "react"
+import Link from "next/link"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -179,11 +181,12 @@ export default function RegisterPage() {
         <p className="text-center text-sm text-muted-foreground">
           Already have an account?{" "}
           
-            href="/login"
-            className="text-primary font-medium hover:underline"
-          >
-            Sign in
-          </a>
+            <Link
+    href="/login"
+    className="text-primary font-medium hover:underline"
+  >
+    Sign in
+  </Link>
         </p>
 
       </div>
