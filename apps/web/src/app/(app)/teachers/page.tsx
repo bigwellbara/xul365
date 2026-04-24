@@ -3,6 +3,8 @@
 // List of all teachers with search and filter
 // ============================================
 
+import React, { useState } from "react"
+import Link from "next/link"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -53,11 +55,12 @@ export default function TeachersPage() {
           </p>
         </div>
         
-          href="/teachers/new"
+        <Link 
+        href="/teachers/new"
           className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:opacity-90 transition-opacity"
         >
           + Add Teacher
-        </a>
+        </Link>
       </div>
 
       {/* Search bar */}
@@ -128,18 +131,18 @@ export default function TeachersPage() {
 
             {/* Actions */}
             <div className="flex items-center gap-2 pt-2 border-t border-border">
-              
+              <Link 
                 href={`/teachers/${teacher.id}`}
                 className="flex-1 text-center py-1.5 border border-border rounded-md text-xs font-medium text-foreground hover:bg-muted transition-colors"
               >
                 View Profile
-              </a>
+              </Link>
               
-                href={`/teachers/${teacher.id}/edit`}
+               <Link href={`/teachers/${teacher.id}/edit`}
                 className="flex-1 text-center py-1.5 bg-primary text-primary-foreground rounded-md text-xs font-medium hover:opacity-90 transition-opacity"
               >
                 Edit
-              </a>
+              </Link>
             </div>
           </div>
         ))}

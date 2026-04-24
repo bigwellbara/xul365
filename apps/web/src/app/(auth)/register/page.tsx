@@ -1,17 +1,55 @@
-// ============================================
-// REGISTER PAGE
-// Step 1 of onboarding - School registration
-// ============================================
+"use client"
 
-import React from "react"
+import React, { useState } from "react"
 import Link from "next/link"
-import type { Metadata } from "next"
-
-export const metadata: Metadata = {
-  title: "Register your school",
-}
+import { useRouter } from "next/navigation"
+import { signUp } from "@/lib/auth-client"
 
 export default function RegisterPage() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [form, setForm] = useState({
+    schoolName: "",
+    subdomain: "",
+    location: "",
+    email: "",
+    password: "",
+    primaryColor: "#2563eb",
+    secondaryColor: "#64748b",
+    accentColor: "#f59e0b",
+  })
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setForm((prev) => ({ ...prev, [e.target.id]: e.target.value }))
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError("")
+    setLoading(true)
+
+    try {
+      const result = await signUp.email({
+        email: form.email,
+        password: form.password,
+        name: form.schoolName,
+      })
+
+      if (result.error) {
+        setError(result.error.message ?? "Registration failed")
+        return
+      }
+
+      // Redirect to onboarding after registration
+      router.push("/onboarding")
+    } catch {
+      setError("Something went wrong. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-full max-w-lg space-y-8 p-8">
@@ -30,7 +68,9 @@ export default function RegisterPage() {
             <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
               1
             </div>
-            <span className="text-sm font-medium text-foreground">School Info</span>
+            <span className="text-sm font-medium text-foreground">
+              School Info
+            </span>
           </div>
           <div className="w-8 h-px bg-border" />
           <div className="flex items-center gap-2">
@@ -49,7 +89,17 @@ export default function RegisterPage() {
         </div>
 
         {/* Form */}
-        <div className="bg-card rounded-lg border border-border p-6 shadow-sm space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="bg-card rounded-lg border border-border p-6 shadow-sm space-y-4"
+        >
+
+          {/* Error message */}
+          {error && (
+            <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
+              <p className="text-sm text-destructive">{error}</p>
+            </div>
+          )}
 
           {/* School name */}
           <div className="space-y-2">
@@ -62,7 +112,10 @@ export default function RegisterPage() {
             <input
               id="schoolName"
               type="text"
+              value={form.schoolName}
+              onChange={handleChange}
               placeholder="e.g. Harare High School"
+              required
               className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -79,7 +132,10 @@ export default function RegisterPage() {
               <input
                 id="subdomain"
                 type="text"
+                value={form.subdomain}
+                onChange={handleChange}
                 placeholder="hararehigh"
+                required
                 className="flex-1 px-3 py-2 border border-input rounded-l-md bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
               <span className="px-3 py-2 border border-l-0 border-input rounded-r-md bg-muted text-muted-foreground text-sm">
@@ -99,7 +155,10 @@ export default function RegisterPage() {
             <input
               id="location"
               type="text"
+              value={form.location}
+              onChange={handleChange}
               placeholder="e.g. Harare, Zimbabwe"
+              required
               className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -115,7 +174,10 @@ export default function RegisterPage() {
             <input
               id="email"
               type="email"
+              value={form.email}
+              onChange={handleChange}
               placeholder="admin@yourschool.com"
+              required
               className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -131,7 +193,11 @@ export default function RegisterPage() {
             <input
               id="password"
               type="password"
+              value={form.password}
+              onChange={handleChange}
               placeholder="••••••••"
+              required
+              minLength={8}
               className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -145,24 +211,30 @@ export default function RegisterPage() {
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Primary</p>
                 <input
+                  id="primaryColor"
                   type="color"
-                  defaultValue="#2563eb"
+                  value={form.primaryColor}
+                  onChange={handleChange}
                   className="w-10 h-10 rounded cursor-pointer border border-input"
                 />
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Secondary</p>
                 <input
+                  id="secondaryColor"
                   type="color"
-                  defaultValue="#64748b"
+                  value={form.secondaryColor}
+                  onChange={handleChange}
                   className="w-10 h-10 rounded cursor-pointer border border-input"
                 />
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Accent</p>
                 <input
+                  id="accentColor"
                   type="color"
-                  defaultValue="#f59e0b"
+                  value={form.accentColor}
+                  onChange={handleChange}
                   className="w-10 h-10 rounded cursor-pointer border border-input"
                 />
               </div>
@@ -170,23 +242,24 @@ export default function RegisterPage() {
           </div>
 
           <button
-            type="button"
-            className="w-full py-2 px-4 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:opacity-90 transition-opacity"
+            type="submit"
+            disabled={loading}
+            className="w-full py-2 px-4 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Continue to feature selection
+            {loading ? "Creating your school..." : "Continue to feature selection"}
           </button>
-        </div>
+
+        </form>
 
         {/* Login link */}
         <p className="text-center text-sm text-muted-foreground">
           Already have an account?{" "}
-          
-            <Link
-    href="/login"
-    className="text-primary font-medium hover:underline"
-  >
-    Sign in
-  </Link>
+          <Link
+            href="/login"
+            className="text-primary font-medium hover:underline"
+          >
+            Sign in
+          </Link>
         </p>
 
       </div>

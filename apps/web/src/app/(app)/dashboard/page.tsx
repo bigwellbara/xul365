@@ -3,6 +3,8 @@
 // Overview of the school's key metrics
 // ============================================
 
+import React, { useState } from "react"
+import Link from "next/link"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -121,7 +123,7 @@ export default function DashboardPage() {
           </h3>
           <div className="space-y-2">
             
-              href="/students"
+              <Link href="/students"
               className="flex items-center gap-3 p-3 rounded-md border border-border hover:bg-muted transition-colors"
             >
               <span className="text-xl">🎓</span>
@@ -133,9 +135,9 @@ export default function DashboardPage() {
                   Enroll a new student
                 </p>
               </div>
-            </a>
+            </Link>
             
-              href="/teachers"
+              <Link href="/teachers"
               className="flex items-center gap-3 p-3 rounded-md border border-border hover:bg-muted transition-colors"
             >
               <span className="text-xl">👨‍🏫</span>
@@ -147,9 +149,9 @@ export default function DashboardPage() {
                   Register a new teacher
                 </p>
               </div>
-            </a>
+            </Link>
             
-              href="/fees"
+            <Link href="/fees"
               className="flex items-center gap-3 p-3 rounded-md border border-border hover:bg-muted transition-colors"
             >
               <span className="text-xl">💰</span>
@@ -161,7 +163,7 @@ export default function DashboardPage() {
                   Bill a student for fees
                 </p>
               </div>
-            </a>
+            </Link>
           </div>
         </div>
 

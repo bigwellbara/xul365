@@ -3,6 +3,8 @@
 // List of all students with search and filter
 // ============================================
 
+import React, { useState } from "react"
+import Link from "next/link"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -68,11 +70,11 @@ export default function StudentsPage() {
           </p>
         </div>
         
-          href="/students/new"
+         <Link href="/students/new"
           className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:opacity-90 transition-opacity"
         >
           + Add Student
-        </a>
+        </Link>
       </div>
 
       {/* Search and filter bar */}
@@ -152,19 +154,19 @@ export default function StudentsPage() {
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
-                    
+                    <Link
                       href={`/students/${student.id}`}
                       className="text-primary hover:underline text-xs"
                     >
                       View
-                    </a>
+                    </Link>
                     <span className="text-border">·</span>
-                    
+                    <Link
                       href={`/students/${student.id}/edit`}
                       className="text-primary hover:underline text-xs"
                     >
                       Edit
-                    </a>
+                    </Link>
                   </div>
                 </td>
               </tr>

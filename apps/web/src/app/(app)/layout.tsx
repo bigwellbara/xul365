@@ -1,25 +1,28 @@
-// ============================================
-// APP LAYOUT
-// Wraps all protected pages
-// Contains the sidebar and top navigation
-// ============================================
+"use client"
 
 import React from "react"
 import Link from "next/link"
-import type { Metadata } from "next"
-
-export const metadata: Metadata = {
-  title: {
-    default: "Dashboard",
-    template: "%s | Xul365",
-  },
-}
+import { useRouter } from "next/navigation"
+import { signOut } from "@/lib/auth-client"
 
 export default function AppLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const router = useRouter()
+
+ async function handleSignOut() {
+  try {
+    await signOut()
+  } catch {
+    // ignore errors if no session exists
+  } finally {
+    // Always redirect to login regardless
+    router.push("/login")
+  }
+}
+
   return (
     <div className="min-h-screen flex bg-background">
 
@@ -34,43 +37,43 @@ export default function AppLayout({
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-1">
-          
-           <Link href="/dashboard"
+          <Link
+            href="/dashboard"
             className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-foreground hover:bg-muted transition-colors"
           >
             <span className="w-4 h-4">📊</span>
             Dashboard
           </Link>
-          
-            <Link href="/students"
+          <Link
+            href="/students"
             className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-foreground hover:bg-muted transition-colors"
           >
             <span className="w-4 h-4">🎓</span>
             Students
           </Link>
-          
-            <Link href="/teachers"
+          <Link
+            href="/teachers"
             className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-foreground hover:bg-muted transition-colors"
           >
             <span className="w-4 h-4">👨‍🏫</span>
             Teachers
           </Link>
-          
-            <Link href="/attendance"
+          <Link
+            href="/attendance"
             className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-foreground hover:bg-muted transition-colors"
           >
             <span className="w-4 h-4">✅</span>
             Attendance
           </Link>
-          
-            <Link href="/fees"
+          <Link
+            href="/fees"
             className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-foreground hover:bg-muted transition-colors"
           >
             <span className="w-4 h-4">💰</span>
             Fees & Billing
           </Link>
-          
-            <Link href="/settings"
+          <Link
+            href="/settings"
             className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-foreground hover:bg-muted transition-colors"
           >
             <span className="w-4 h-4">⚙️</span>
@@ -93,6 +96,13 @@ export default function AppLayout({
               </p>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="mt-3 w-full py-2 px-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors text-left"
+          >
+            Sign out
+          </button>
         </div>
 
       </aside>
@@ -101,14 +111,8 @@ export default function AppLayout({
       <main className="flex-1 flex flex-col overflow-hidden">
 
         {/* Top bar */}
-        <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6">
+        <header className="h-16 border-b border-border bg-card flex items-center px-6">
           <h1 className="text-lg font-semibold text-foreground">Dashboard</h1>
-          <button
-            type="button"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Sign out
-          </button>
         </header>
 
         {/* Page content */}
