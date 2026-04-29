@@ -1,280 +1,515 @@
-// ============================================
-// FEES & BILLING PAGE
-// View and manage student invoices and payments
-// ============================================
+"use client"
 
-import type { Metadata } from "next"
+import React, { useState } from "react"
 
-export const metadata: Metadata = {
-  title: "Fees & Billing",
+// ---- TYPES ----
+interface Invoice {
+  id: string
+  studentName: string
+  gradeLevel: string
+  term: string
+  academicYear: string
+  items: { description: string; amountUsd: number }[]
+  totalAmountUsd: number
+  status: "unpaid" | "partial" | "paid"
+  dueDate: string
 }
 
-// Placeholder data — will be replaced with real DB data later
-const placeholderInvoices = [
-  {
-    id: "1",
-    studentName: "Tatenda Moyo",
-    academicYear: "2025",
-    term: "TERM_1",
-    totalAmountUsd: 350,
-    amountPaidUsd: 350,
-    status: "paid",
-    dueDate: "2025-02-28",
-  },
-  {
-    id: "2",
-    studentName: "Chiedza Mutasa",
-    academicYear: "2025",
-    term: "TERM_1",
-    totalAmountUsd: 350,
-    amountPaidUsd: 150,
-    status: "partial",
-    dueDate: "2025-02-28",
-  },
-  {
-    id: "3",
-    studentName: "Farai Ndlovu",
-    academicYear: "2025",
-    term: "TERM_1",
-    totalAmountUsd: 350,
-    amountPaidUsd: 0,
-    status: "unpaid",
-    dueDate: "2025-02-28",
-  },
-  {
-    id: "4",
-    studentName: "Nyasha Dube",
-    academicYear: "2025",
-    term: "TERM_1",
-    totalAmountUsd: 350,
-    amountPaidUsd: 0,
-    status: "unpaid",
-    dueDate: "2025-02-28",
-  },
-]
-
-const termLabelMap: Record<string, string> = {
-  TERM_1: "Term 1",
-  TERM_2: "Term 2",
-  TERM_3: "Term 3",
+// ---- EMPTY FORM ----
+const emptyForm = {
+  studentName: "",
+  gradeLevel: "FORM_1",
+  term: "TERM_1",
+  academicYear: "2025",
+  dueDate: "",
+  tuitionFee: "",
+  examFee: "",
+  developmentFee: "",
+  sportsFee: "",
 }
 
-const statusStyles: Record<string, string> = {
-  paid: "bg-green-100 text-green-700",
-  partial: "bg-yellow-100 text-yellow-700",
-  unpaid: "bg-red-100 text-red-700",
+const STATUS_STYLES = {
+  unpaid: "bg-red-100 text-red-800",
+  partial: "bg-amber-100 text-amber-800",
+  paid: "bg-green-100 text-green-800",
 }
-
-// Summary totals
-const totalInvoiced = placeholderInvoices.reduce(
-  (sum, i) => sum + i.totalAmountUsd,
-  0
-)
-const totalCollected = placeholderInvoices.reduce(
-  (sum, i) => sum + i.amountPaidUsd,
-  0
-)
-const totalOutstanding = totalInvoiced - totalCollected
 
 export default function FeesPage() {
+  const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [showForm, setShowForm] = useState(false)
+  const [search, setSearch] = useState("")
+  const [form, setForm] = useState(emptyForm)
+  const [loading, setLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState<"all" | "unpaid" | "paid">("all")
+
+  function handleChange(
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) {
+    setForm((prev) => ({ ...prev, [e.target.id]: e.target.value }))
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+
+    // Build invoice items from filled fields
+    const items = [
+      form.tuitionFee && {
+        description: "Tuition Fee",
+        amountUsd: parseFloat(form.tuitionFee),
+      },
+      form.examFee && {
+        description: "Examination Fee",
+        amountUsd: parseFloat(form.examFee),
+      },
+      form.developmentFee && {
+        description: "Development Fee",
+        amountUsd: parseFloat(form.developmentFee),
+      },
+      form.sportsFee && {
+        description: "Sports Fee",
+        amountUsd: parseFloat(form.sportsFee),
+      },
+    ].filter(Boolean) as { description: string; amountUsd: number }[]
+
+    const totalAmountUsd = items.reduce((sum, i) => sum + i.amountUsd, 0)
+
+    const newInvoice: Invoice = {
+      id: `INV-${Date.now()}`,
+      studentName: form.studentName,
+      gradeLevel: form.gradeLevel,
+      term: form.term,
+      academicYear: form.academicYear,
+      items,
+      totalAmountUsd,
+      status: "unpaid",
+      dueDate: form.dueDate,
+    }
+
+    setTimeout(() => {
+      setInvoices((prev) => [newInvoice, ...prev])
+      setForm(emptyForm)
+      setShowForm(false)
+      setLoading(false)
+    }, 500)
+  }
+
+  // Filter invoices
+  const filtered = invoices
+    .filter((inv) =>
+      inv.studentName.toLowerCase().includes(search.toLowerCase())
+    )
+    .filter((inv) => {
+      if (activeTab === "unpaid") return inv.status === "unpaid"
+      if (activeTab === "paid") return inv.status === "paid"
+      return true
+    })
+
+  // Summary totals
+  const totalBilled = invoices.reduce((sum, inv) => sum + inv.totalAmountUsd, 0)
+  const totalPaid = invoices
+    .filter((inv) => inv.status === "paid")
+    .reduce((sum, inv) => sum + inv.totalAmountUsd, 0)
+  const totalOutstanding = totalBilled - totalPaid
+
   return (
     <div className="space-y-6">
 
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Fees & Billing</h1>
+          <h2 className="text-2xl font-bold text-foreground">
+            Fees & Billing
+          </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage student invoices and track payments
+            Manage student invoices and payments
           </p>
         </div>
-        
-          href="/fees/new"
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:opacity-90 transition-opacity"
+        <button
+          type="button"
+          onClick={() => setShowForm(true)}
+          className="py-2 px-4 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:opacity-90 transition-opacity"
         >
-          + Create Invoice
-        </a>
+          + Create invoice
+        </button>
       </div>
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-card border border-border rounded-lg p-5 space-y-1">
-          <p className="text-sm text-muted-foreground">Total Invoiced</p>
-          <p className="text-2xl font-bold text-foreground">
-            ${totalInvoiced.toFixed(2)}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {placeholderInvoices.length} invoices this term
+        <div className="bg-card rounded-lg border border-border p-5">
+          <p className="text-sm text-muted-foreground">Total billed</p>
+          <p className="text-2xl font-bold text-foreground mt-1">
+            ${totalBilled.toFixed(2)}
           </p>
         </div>
-        <div className="bg-card border border-border rounded-lg p-5 space-y-1">
-          <p className="text-sm text-muted-foreground">Total Collected</p>
-          <p className="text-2xl font-bold text-green-600">
-            ${totalCollected.toFixed(2)}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {Math.round((totalCollected / totalInvoiced) * 100)}% of total
+        <div className="bg-card rounded-lg border border-border p-5">
+          <p className="text-sm text-muted-foreground">Total collected</p>
+          <p className="text-2xl font-bold text-green-600 mt-1">
+            ${totalPaid.toFixed(2)}
           </p>
         </div>
-        <div className="bg-card border border-border rounded-lg p-5 space-y-1">
+        <div className="bg-card rounded-lg border border-border p-5">
           <p className="text-sm text-muted-foreground">Outstanding</p>
-          <p className="text-2xl font-bold text-red-600">
+          <p className="text-2xl font-bold text-red-600 mt-1">
             ${totalOutstanding.toFixed(2)}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {placeholderInvoices.filter((i) => i.status !== "paid").length} unpaid
-            invoices
           </p>
         </div>
       </div>
 
-      {/* Filter bar */}
-      <div className="flex items-center gap-3">
+      {/* Create invoice form */}
+      {showForm && (
+        <div className="bg-card rounded-lg border border-border p-6">
+          <h3 className="text-base font-semibold text-foreground mb-4">
+            Create new invoice
+          </h3>
+          <form onSubmit={handleSubmit} className="space-y-4">
+
+            {/* Student and grade */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label
+                  htmlFor="studentName"
+                  className="text-sm font-medium text-foreground"
+                >
+                  Student name
+                </label>
+                <input
+                  id="studentName"
+                  type="text"
+                  value={form.studentName}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <div className="space-y-2">
+                <label
+                  htmlFor="gradeLevel"
+                  className="text-sm font-medium text-foreground"
+                >
+                  Grade level
+                </label>
+                <select
+                  id="gradeLevel"
+                  value={form.gradeLevel}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="ECD_A">ECD A</option>
+                  <option value="ECD_B">ECD B</option>
+                  <option value="GRADE_1">Grade 1</option>
+                  <option value="GRADE_7">Grade 7</option>
+                  <option value="FORM_1">Form 1</option>
+                  <option value="FORM_2">Form 2</option>
+                  <option value="FORM_3">Form 3</option>
+                  <option value="FORM_4">Form 4</option>
+                  <option value="FORM_5">Form 5</option>
+                  <option value="FORM_6">Form 6</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Term, year, due date */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label
+                  htmlFor="term"
+                  className="text-sm font-medium text-foreground"
+                >
+                  Term
+                </label>
+                <select
+                  id="term"
+                  value={form.term}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="TERM_1">Term 1</option>
+                  <option value="TERM_2">Term 2</option>
+                  <option value="TERM_3">Term 3</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label
+                  htmlFor="academicYear"
+                  className="text-sm font-medium text-foreground"
+                >
+                  Academic year
+                </label>
+                <input
+                  id="academicYear"
+                  type="text"
+                  value={form.academicYear}
+                  onChange={handleChange}
+                  placeholder="2025"
+                  required
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <div className="space-y-2">
+                <label
+                  htmlFor="dueDate"
+                  className="text-sm font-medium text-foreground"
+                >
+                  Due date
+                </label>
+                <input
+                  id="dueDate"
+                  type="date"
+                  value={form.dueDate}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            </div>
+
+            {/* Fee items */}
+            <div className="border-t border-border pt-4 space-y-3">
+              <h4 className="text-sm font-medium text-foreground">
+                Fee items (USD)
+              </h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label
+                    htmlFor="tuitionFee"
+                    className="text-sm text-muted-foreground"
+                  >
+                    Tuition fee
+                  </label>
+                  <input
+                    id="tuitionFee"
+                    type="number"
+                    value={form.tuitionFee}
+                    onChange={handleChange}
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                    className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label
+                    htmlFor="examFee"
+                    className="text-sm text-muted-foreground"
+                  >
+                    Examination fee
+                  </label>
+                  <input
+                    id="examFee"
+                    type="number"
+                    value={form.examFee}
+                    onChange={handleChange}
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                    className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label
+                    htmlFor="developmentFee"
+                    className="text-sm text-muted-foreground"
+                  >
+                    Development fee
+                  </label>
+                  <input
+                    id="developmentFee"
+                    type="number"
+                    value={form.developmentFee}
+                    onChange={handleChange}
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                    className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label
+                    htmlFor="sportsFee"
+                    className="text-sm text-muted-foreground"
+                  >
+                    Sports fee
+                  </label>
+                  <input
+                    id="sportsFee"
+                    type="number"
+                    value={form.sportsFee}
+                    onChange={handleChange}
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                    className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+              </div>
+
+              {/* Total preview */}
+              <div className="flex items-center justify-between bg-muted rounded-md px-4 py-3">
+                <p className="text-sm font-medium text-foreground">
+                  Total amount
+                </p>
+                <p className="text-lg font-bold text-foreground">
+                  $
+                  {(
+                    parseFloat(form.tuitionFee || "0") +
+                    parseFloat(form.examFee || "0") +
+                    parseFloat(form.developmentFee || "0") +
+                    parseFloat(form.sportsFee || "0")
+                  ).toFixed(2)}
+                </p>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="py-2 px-4 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                {loading ? "Creating..." : "Create invoice"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForm(false)
+                  setForm(emptyForm)
+                }}
+                className="py-2 px-4 border border-border rounded-md text-sm font-medium text-foreground hover:bg-muted transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+
+          </form>
+        </div>
+      )}
+
+      {/* Tabs and search */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex gap-1 bg-muted rounded-lg p-1">
+          {(["all", "unpaid", "paid"] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors capitalize ${
+                activeTab === tab
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
         <input
           type="text"
-          placeholder="Search by student name..."
-          className="flex-1 max-w-sm px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          placeholder="Search invoices..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full max-w-sm px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
-        <select className="px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-          <option value="">All terms</option>
-          <option value="TERM_1">Term 1</option>
-          <option value="TERM_2">Term 2</option>
-          <option value="TERM_3">Term 3</option>
-        </select>
-        <select className="px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-          <option value="">All statuses</option>
-          <option value="paid">Paid</option>
-          <option value="partial">Partial</option>
-          <option value="unpaid">Unpaid</option>
-        </select>
       </div>
 
       {/* Invoices table */}
-      <div className="bg-card border border-border rounded-lg overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-muted/50">
-              <th className="text-left px-4 py-3 font-medium text-muted-foreground">
-                Student
-              </th>
-              <th className="text-left px-4 py-3 font-medium text-muted-foreground">
-                Term
-              </th>
-              <th className="text-left px-4 py-3 font-medium text-muted-foreground">
-                Amount
-              </th>
-              <th className="text-left px-4 py-3 font-medium text-muted-foreground">
-                Paid
-              </th>
-              <th className="text-left px-4 py-3 font-medium text-muted-foreground">
-                Balance
-              </th>
-              <th className="text-left px-4 py-3 font-medium text-muted-foreground">
-                Due Date
-              </th>
-              <th className="text-left px-4 py-3 font-medium text-muted-foreground">
-                Status
-              </th>
-              <th className="text-left px-4 py-3 font-medium text-muted-foreground">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {placeholderInvoices.map((invoice, index) => (
-              <tr
-                key={invoice.id}
-                className={
-                  index < placeholderInvoices.length - 1
-                    ? "border-b border-border"
-                    : ""
-                }
-              >
-                <td className="px-4 py-3 font-medium text-foreground">
-                  {invoice.studentName}
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">
-                  {termLabelMap[invoice.term] ?? invoice.term}{" "}
-                  {invoice.academicYear}
-                </td>
-                <td className="px-4 py-3 text-foreground">
-                  ${invoice.totalAmountUsd.toFixed(2)}
-                </td>
-                <td className="px-4 py-3 text-green-600">
-                  ${invoice.amountPaidUsd.toFixed(2)}
-                </td>
-                <td className="px-4 py-3 text-red-600">
-                  ${(invoice.totalAmountUsd - invoice.amountPaidUsd).toFixed(2)}
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">
-                  {invoice.dueDate}
-                </td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                      statusStyles[invoice.status] ??
-                      "bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {invoice.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    
-                      href={`/fees/${invoice.id}`}
-                      className="text-primary hover:underline text-xs"
-                    >
-                      View
-                    </a>
-                    {invoice.status !== "paid" && (
-                      <>
-                        <span className="text-border">·</span>
-                        
-                          href={`/fees/${invoice.id}/pay`}
-                          className="text-primary hover:underline text-xs"
-                        >
-                          Record Payment
-                        </a>
-                      </>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {/* Empty state */}
-        {placeholderInvoices.length === 0 && (
-          <div className="py-12 text-center">
-            <p className="text-sm text-muted-foreground">
-              No invoices yet. Create your first invoice to get started.
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Pagination */}
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <p>Showing {placeholderInvoices.length} invoices</p>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="px-3 py-1 border border-border rounded-md hover:bg-muted transition-colors disabled:opacity-50"
-            disabled
-          >
-            Previous
-          </button>
-          <button
-            type="button"
-            className="px-3 py-1 border border-border rounded-md hover:bg-muted transition-colors disabled:opacity-50"
-            disabled
-          >
-            Next
-          </button>
+      {invoices.length === 0 ? (
+        <div className="bg-card rounded-lg border border-border p-12 text-center">
+          <p className="text-4xl mb-4">💰</p>
+          <p className="text-base font-medium text-foreground">
+            No invoices yet
+          </p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Click the button above to create your first invoice
+          </p>
         </div>
-      </div>
+      ) : (
+        <div className="bg-card rounded-lg border border-border overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border bg-muted/50">
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Invoice
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Student
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Term
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Amount
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Due date
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Status
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((invoice) => (
+                <tr
+                  key={invoice.id}
+                  className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
+                >
+                  <td className="px-4 py-3 text-sm font-medium text-foreground">
+                    {invoice.id}
+                  </td>
+                  <td className="px-4 py-3">
+                    <p className="text-sm font-medium text-foreground">
+                      {invoice.studentName}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {invoice.gradeLevel.replace("_", " ")}
+                    </p>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-foreground">
+                    {invoice.term.replace("_", " ")} {invoice.academicYear}
+                  </td>
+                  <td className="px-4 py-3 text-sm font-medium text-foreground">
+                    ${invoice.totalAmountUsd.toFixed(2)}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-foreground">
+                    {invoice.dueDate}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[invoice.status]}`}
+                    >
+                      {invoice.status.charAt(0).toUpperCase() +
+                        invoice.status.slice(1)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setInvoices((prev) =>
+                          prev.map((inv) =>
+                            inv.id === invoice.id
+                              ? { ...inv, status: "paid" }
+                              : inv
+                          )
+                        )
+                      }
+                      disabled={invoice.status === "paid"}
+                      className="text-xs text-primary hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      Mark as paid
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
     </div>
   )

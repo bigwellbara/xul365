@@ -1,166 +1,349 @@
-// ============================================
-// TEACHERS PAGE
-// List of all teachers with search and filter
-// ============================================
+"use client"
 
 import React, { useState } from "react"
-import Link from "next/link"
-import type { Metadata } from "next"
 
-export const metadata: Metadata = {
-  title: "Teachers",
+// ---- TYPES ----
+interface Teacher {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  subjects: string[]
+  status: string
 }
 
-// Placeholder data — will be replaced with real DB data later
-const placeholderTeachers = [
-  {
-    id: "1",
-    firstName: "Tendai",
-    lastName: "Chirwa",
-    email: "t.chirwa@school.com",
-    phone: "+263 77 111 2222",
-    subjects: ["Mathematics", "Physics"],
-    status: "active",
-  },
-  {
-    id: "2",
-    firstName: "Rudo",
-    lastName: "Sithole",
-    email: "r.sithole@school.com",
-    phone: "+263 71 333 4444",
-    subjects: ["English", "History"],
-    status: "active",
-  },
-  {
-    id: "3",
-    firstName: "Blessing",
-    lastName: "Gumbo",
-    email: "b.gumbo@school.com",
-    phone: "+263 78 555 6666",
-    subjects: ["Biology", "Chemistry"],
-    status: "inactive",
-  },
+// ---- AVAILABLE SUBJECTS ----
+const SUBJECTS = [
+  "Mathematics",
+  "English Language",
+  "Shona",
+  "Ndebele",
+  "Science",
+  "Social Studies",
+  "History",
+  "Geography",
+  "Agriculture",
+  "Home Economics",
+  "Physical Education",
+  "Art & Craft",
+  "Music",
+  "ICT",
+  "Accounts",
+  "Business Studies",
+  "Economics",
+  "Physics",
+  "Chemistry",
+  "Biology",
+  "Combined Science",
+  "Fashion & Fabrics",
 ]
 
+// ---- EMPTY FORM ----
+const emptyForm = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  subjects: [] as string[],
+}
+
 export default function TeachersPage() {
+  const [teachers, setTeachers] = useState<Teacher[]>([])
+  const [showForm, setShowForm] = useState(false)
+  const [search, setSearch] = useState("")
+  const [form, setForm] = useState(emptyForm)
+  const [loading, setLoading] = useState(false)
+
+  function handleChange(
+    e: React.ChangeEvent<HTMLInputElement>
+  ) {
+    setForm((prev) => ({ ...prev, [e.target.id]: e.target.value }))
+  }
+
+  function toggleSubject(subject: string) {
+    setForm((prev) => ({
+      ...prev,
+      subjects: prev.subjects.includes(subject)
+        ? prev.subjects.filter((s) => s !== subject)
+        : [...prev.subjects, subject],
+    }))
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+
+    const newTeacher: Teacher = {
+      id: Date.now().toString(),
+      firstName: form.firstName,
+      lastName: form.lastName,
+      email: form.email,
+      phone: form.phone,
+      subjects: form.subjects,
+      status: "active",
+    }
+
+    setTimeout(() => {
+      setTeachers((prev) => [newTeacher, ...prev])
+      setForm(emptyForm)
+      setShowForm(false)
+      setLoading(false)
+    }, 500)
+  }
+
+  const filtered = teachers.filter((t) =>
+    `${t.firstName} ${t.lastName}`
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  )
+
   return (
     <div className="space-y-6">
 
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Teachers</h1>
+          <h2 className="text-2xl font-bold text-foreground">Teachers</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage all teaching staff
+            {teachers.length} teacher{teachers.length !== 1 ? "s" : ""} registered
           </p>
         </div>
-        
-        <Link 
-        href="/teachers/new"
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:opacity-90 transition-opacity"
+        <button
+          type="button"
+          onClick={() => setShowForm(true)}
+          className="py-2 px-4 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:opacity-90 transition-opacity"
         >
-          + Add Teacher
-        </Link>
+          + Add teacher
+        </button>
       </div>
 
-      {/* Search bar */}
-      <div className="flex items-center gap-3">
-        <input
-          type="text"
-          placeholder="Search teachers..."
-          className="flex-1 max-w-sm px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-        />
-        <select className="px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-          <option value="">All statuses</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
-      </div>
+      {/* Search */}
+      <input
+        type="text"
+        placeholder="Search teachers..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="w-full max-w-sm px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+      />
 
-      {/* Teachers grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {placeholderTeachers.map((teacher) => (
-          <div
-            key={teacher.id}
-            className="bg-card border border-border rounded-lg p-5 space-y-4"
-          >
-            {/* Teacher header */}
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">
-                  {teacher.firstName[0]}{teacher.lastName[0]}
-                </div>
-                <div>
-                  <p className="font-medium text-foreground text-sm">
-                    {teacher.firstName} {teacher.lastName}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{teacher.email}</p>
-                </div>
+      {/* Add teacher form */}
+      {showForm && (
+        <div className="bg-card rounded-lg border border-border p-6">
+          <h3 className="text-base font-semibold text-foreground mb-4">
+            Add new teacher
+          </h3>
+          <form onSubmit={handleSubmit} className="space-y-4">
+
+            {/* Name row */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label
+                  htmlFor="firstName"
+                  className="text-sm font-medium text-foreground"
+                >
+                  First name
+                </label>
+                <input
+                  id="firstName"
+                  type="text"
+                  value={form.firstName}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
               </div>
-              <span
-                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                  teacher.status === "active"
-                    ? "bg-green-100 text-green-700"
-                    : "bg-muted text-muted-foreground"
-                }`}
-              >
-                {teacher.status}
-              </span>
+              <div className="space-y-2">
+                <label
+                  htmlFor="lastName"
+                  className="text-sm font-medium text-foreground"
+                >
+                  Last name
+                </label>
+                <input
+                  id="lastName"
+                  type="text"
+                  value={form.lastName}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            </div>
+
+            {/* Email and phone */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label
+                  htmlFor="email"
+                  className="text-sm font-medium text-foreground"
+                >
+                  Email address
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <div className="space-y-2">
+                <label
+                  htmlFor="phone"
+                  className="text-sm font-medium text-foreground"
+                >
+                  Phone number
+                </label>
+                <input
+                  id="phone"
+                  type="tel"
+                  value={form.phone}
+                  onChange={handleChange}
+                  placeholder="07X XXX XXXX"
+                  required
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
             </div>
 
             {/* Subjects */}
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Subjects</p>
-              <div className="flex flex-wrap gap-1">
-                {teacher.subjects.map((subject) => (
-                  <span
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                Subjects taught
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {SUBJECTS.map((subject) => (
+                  <button
                     key={subject}
-                    className="px-2 py-0.5 bg-muted text-muted-foreground rounded text-xs"
+                    type="button"
+                    onClick={() => toggleSubject(subject)}
+                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                      form.subjects.includes(subject)
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-foreground border-border hover:border-primary"
+                    }`}
                   >
                     {subject}
-                  </span>
+                  </button>
                 ))}
               </div>
-            </div>
-
-            {/* Phone */}
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span>📞</span>
-              <span>{teacher.phone}</span>
+              {form.subjects.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Select at least one subject
+                </p>
+              )}
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-2 pt-2 border-t border-border">
-              <Link 
-                href={`/teachers/${teacher.id}`}
-                className="flex-1 text-center py-1.5 border border-border rounded-md text-xs font-medium text-foreground hover:bg-muted transition-colors"
+            <div className="flex gap-3 pt-2">
+              <button
+                type="submit"
+                disabled={loading || form.subjects.length === 0}
+                className="py-2 px-4 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                View Profile
-              </Link>
-              
-               <Link href={`/teachers/${teacher.id}/edit`}
-                className="flex-1 text-center py-1.5 bg-primary text-primary-foreground rounded-md text-xs font-medium hover:opacity-90 transition-opacity"
+                {loading ? "Saving..." : "Save teacher"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForm(false)
+                  setForm(emptyForm)
+                }}
+                className="py-2 px-4 border border-border rounded-md text-sm font-medium text-foreground hover:bg-muted transition-colors"
               >
-                Edit
-              </Link>
+                Cancel
+              </button>
             </div>
-          </div>
-        ))}
-      </div>
 
-      {/* Empty state */}
-      {placeholderTeachers.length === 0 && (
-        <div className="bg-card border border-border rounded-lg py-12 text-center">
-          <p className="text-sm text-muted-foreground">
-            No teachers yet. Add your first teacher to get started.
-          </p>
+          </form>
         </div>
       )}
 
-      {/* Count */}
-      <p className="text-sm text-muted-foreground">
-        Showing {placeholderTeachers.length} teachers
-      </p>
+      {/* Teachers table */}
+      {teachers.length === 0 ? (
+        <div className="bg-card rounded-lg border border-border p-12 text-center">
+          <p className="text-4xl mb-4">👨‍🏫</p>
+          <p className="text-base font-medium text-foreground">
+            No teachers yet
+          </p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Click the button above to add your first teacher
+          </p>
+        </div>
+      ) : (
+        <div className="bg-card rounded-lg border border-border overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border bg-muted/50">
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Name
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Email
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Phone
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Subjects
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Status
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((teacher) => (
+                <tr
+                  key={teacher.id}
+                  className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
+                >
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium">
+                        {teacher.firstName[0]}{teacher.lastName[0]}
+                      </div>
+                      <p className="text-sm font-medium text-foreground">
+                        {teacher.firstName} {teacher.lastName}
+                      </p>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-foreground">
+                    {teacher.email}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-foreground">
+                    {teacher.phone}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-1">
+                      {teacher.subjects.slice(0, 2).map((s) => (
+                        <span
+                          key={s}
+                          className="px-2 py-0.5 rounded-full text-xs bg-muted text-muted-foreground"
+                        >
+                          {s}
+                        </span>
+                      ))}
+                      {teacher.subjects.length > 2 && (
+                        <span className="px-2 py-0.5 rounded-full text-xs bg-muted text-muted-foreground">
+                          +{teacher.subjects.length - 2} more
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Active
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
     </div>
   )
