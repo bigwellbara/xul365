@@ -1,13 +1,16 @@
-// ============================================
-// BETTER AUTH CONFIGURATION
-// Handles authentication for all tenants
-// ============================================
-
 import { betterAuth } from "better-auth"
+import { prismaAdapter } from "@better-auth/prisma-adapter"
+import { PrismaClient } from "@prisma/client"
+
+const prisma = new PrismaClient()
 
 export const auth = betterAuth({
-  // We will connect this to the database shortly
+  baseURL: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
   secret: process.env.BETTER_AUTH_SECRET ?? "development-secret-change-in-production",
+
+  database: prismaAdapter(prisma, {
+    provider: "mysql",
+  }),
 
   emailAndPassword: {
     enabled: true,
@@ -15,23 +18,8 @@ export const auth = betterAuth({
   },
 
   session: {
-    expiresIn: 60 * 60 * 24 * 7, // 7 days
-    updateAge: 60 * 60 * 24,      // refresh if older than 1 day
-  },
-
-  // We will add tenant/school context here later
-  user: {
-    additionalFields: {
-      tenantId: {
-        type: "string",
-        required: false,
-      },
-      role: {
-        type: "string",
-        required: false,
-        defaultValue: "admin",
-      },
-    },
+    expiresIn: 60 * 60 * 24 * 7,
+    updateAge: 60 * 60 * 24,
   },
 })
 

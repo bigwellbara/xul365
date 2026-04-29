@@ -7,33 +7,41 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "db:push": "prisma db push"
   },
   "dependencies": {
-    "@xul365/domain": "*",
+    "@better-auth/prisma-adapter": "^1.6.9",
+    "@hookform/resolvers": "^3.4.0",
     "@xul365/application": "*",
-    "@xul365/infrastructure": "*",
     "@xul365/database": "*",
+    "@xul365/domain": "*",
+    "@xul365/infrastructure": "*",
     "@xul365/ui": "*",
+    "better-auth": "^1.6.9",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.0",
+    "dotenv": "^17.4.2",
+    "lucide-react": "^0.378.0",
     "next": "^14.2.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
-    "better-auth": "^1.0.0",
-    "tailwindcss": "^3.4.0",
-    "class-variance-authority": "^0.7.0",
-    "clsx": "^2.1.0",
+    "react-hook-form": "^7.51.0",
     "tailwind-merge": "^2.3.0",
-    "lucide-react": "^0.378.0",
-    "zod": "^3.23.0",
-    "@hookform/resolvers": "^3.4.0",
-    "react-hook-form": "^7.51.0"
+    "tailwindcss": "^3.4.0",
+    "zod": "^3.23.0"
   },
   "devDependencies": {
-    "@xul365/config": "*",
+    "@prisma/client": "^5.22.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
-    "typescript": "^5.4.0",
+    "@xul365/config": "*",
     "autoprefixer": "^10.4.0",
-    "postcss": "^8.4.0"
+    "postcss": "^8.4.0",
+    "prisma": "^5.22.0",
+    "typescript": "^5.4.0"
   }
 }
