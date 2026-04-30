@@ -1,8 +1,7 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 
-// ---- TYPES ----
 interface Teacher {
   id: string
   firstName: string
@@ -13,33 +12,16 @@ interface Teacher {
   status: string
 }
 
-// ---- AVAILABLE SUBJECTS ----
 const SUBJECTS = [
-  "Mathematics",
-  "English Language",
-  "Shona",
-  "Ndebele",
-  "Science",
-  "Social Studies",
-  "History",
-  "Geography",
-  "Agriculture",
-  "Home Economics",
-  "Physical Education",
-  "Art & Craft",
-  "Music",
-  "ICT",
-  "Accounts",
-  "Business Studies",
-  "Economics",
-  "Physics",
-  "Chemistry",
-  "Biology",
-  "Combined Science",
+  "Mathematics", "English Language", "Shona", "Ndebele",
+  "Science", "Social Studies", "History", "Geography",
+  "Agriculture", "Home Economics", "Physical Education",
+  "Art & Craft", "Music", "ICT", "Accounts",
+  "Business Studies", "Economics", "Physics",
+  "Chemistry", "Biology", "Combined Science",
   "Fashion & Fabrics",
 ]
 
-// ---- EMPTY FORM ----
 const emptyForm = {
   firstName: "",
   lastName: "",
@@ -54,10 +36,25 @@ export default function TeachersPage() {
   const [search, setSearch] = useState("")
   const [form, setForm] = useState(emptyForm)
   const [loading, setLoading] = useState(false)
+  const [fetching, setFetching] = useState(true)
+  const [error, setError] = useState("")
 
-  function handleChange(
-    e: React.ChangeEvent<HTMLInputElement>
-  ) {
+  useEffect(() => {
+    async function fetchTeachers() {
+      try {
+        const res = await fetch("/api/teachers")
+        const data = await res.json() as { teachers: Teacher[] }
+        setTeachers(data.teachers ?? [])
+      } catch {
+        setError("Failed to load teachers")
+      } finally {
+        setFetching(false)
+      }
+    }
+    void fetchTeachers()
+  }, [])
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm((prev) => ({ ...prev, [e.target.id]: e.target.value }))
   }
 
@@ -70,26 +67,34 @@ export default function TeachersPage() {
     }))
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    console.log("FORM SUBMITTED")
     setLoading(true)
+    setError("")
 
-    const newTeacher: Teacher = {
-      id: Date.now().toString(),
-      firstName: form.firstName,
-      lastName: form.lastName,
-      email: form.email,
-      phone: form.phone,
-      subjects: form.subjects,
-      status: "active",
-    }
+    try {
+      const res = await fetch("/api/teachers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      })
 
-    setTimeout(() => {
-      setTeachers((prev) => [newTeacher, ...prev])
+      const data = await res.json() as { teacher: Teacher; error?: string }
+
+      if (!res.ok) {
+        setError(data.error ?? "Failed to save teacher")
+        return
+      }
+
+      setTeachers((prev) => [data.teacher, ...prev])
       setForm(emptyForm)
       setShowForm(false)
+    } catch {
+      setError("Something went wrong. Please try again.")
+    } finally {
       setLoading(false)
-    }, 500)
+    }
   }
 
   const filtered = teachers.filter((t) =>
@@ -101,7 +106,6 @@ export default function TeachersPage() {
   return (
     <div className="space-y-6">
 
-      {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-foreground">Teachers</h2>
@@ -118,7 +122,12 @@ export default function TeachersPage() {
         </button>
       </div>
 
-      {/* Search */}
+      {error && (
+        <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
+      )}
+
       <input
         type="text"
         placeholder="Search teachers..."
@@ -127,7 +136,6 @@ export default function TeachersPage() {
         className="w-full max-w-sm px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
       />
 
-      {/* Add teacher form */}
       {showForm && (
         <div className="bg-card rounded-lg border border-border p-6">
           <h3 className="text-base font-semibold text-foreground mb-4">
@@ -135,15 +143,9 @@ export default function TeachersPage() {
           </h3>
           <form onSubmit={handleSubmit} className="space-y-4">
 
-            {/* Name row */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label
-                  htmlFor="firstName"
-                  className="text-sm font-medium text-foreground"
-                >
-                  First name
-                </label>
+                <label htmlFor="firstName" className="text-sm font-medium text-foreground">First name</label>
                 <input
                   id="firstName"
                   type="text"
@@ -154,12 +156,7 @@ export default function TeachersPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label
-                  htmlFor="lastName"
-                  className="text-sm font-medium text-foreground"
-                >
-                  Last name
-                </label>
+                <label htmlFor="lastName" className="text-sm font-medium text-foreground">Last name</label>
                 <input
                   id="lastName"
                   type="text"
@@ -171,15 +168,9 @@ export default function TeachersPage() {
               </div>
             </div>
 
-            {/* Email and phone */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label
-                  htmlFor="email"
-                  className="text-sm font-medium text-foreground"
-                >
-                  Email address
-                </label>
+                <label htmlFor="email" className="text-sm font-medium text-foreground">Email address</label>
                 <input
                   id="email"
                   type="email"
@@ -190,12 +181,7 @@ export default function TeachersPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label
-                  htmlFor="phone"
-                  className="text-sm font-medium text-foreground"
-                >
-                  Phone number
-                </label>
+                <label htmlFor="phone" className="text-sm font-medium text-foreground">Phone number</label>
                 <input
                   id="phone"
                   type="tel"
@@ -208,11 +194,8 @@ export default function TeachersPage() {
               </div>
             </div>
 
-            {/* Subjects */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">
-                Subjects taught
-              </label>
+              <label className="text-sm font-medium text-foreground">Subjects taught</label>
               <div className="flex flex-wrap gap-2">
                 {SUBJECTS.map((subject) => (
                   <button
@@ -230,27 +213,22 @@ export default function TeachersPage() {
                 ))}
               </div>
               {form.subjects.length === 0 && (
-                <p className="text-xs text-muted-foreground">
-                  Select at least one subject
-                </p>
+                <p className="text-xs text-muted-foreground">Select at least one subject</p>
               )}
             </div>
 
-            {/* Actions */}
             <div className="flex gap-3 pt-2">
-              <button
-                type="submit"
-                disabled={loading || form.subjects.length === 0}
-                className="py-2 px-4 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-              >
-                {loading ? "Saving..." : "Save teacher"}
-              </button>
+             <button
+  type="button"
+  onClick={(e) => void handleSubmit(e as unknown as React.FormEvent)}
+  disabled={loading || form.subjects.length === 0}
+  className="py-2 px-4 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+>
+  {loading ? "Saving..." : "Save teacher"}
+</button>
               <button
                 type="button"
-                onClick={() => {
-                  setShowForm(false)
-                  setForm(emptyForm)
-                }}
+                onClick={() => { setShowForm(false); setForm(emptyForm) }}
                 className="py-2 px-4 border border-border rounded-md text-sm font-medium text-foreground hover:bg-muted transition-colors"
               >
                 Cancel
@@ -261,13 +239,14 @@ export default function TeachersPage() {
         </div>
       )}
 
-      {/* Teachers table */}
-      {teachers.length === 0 ? (
+      {fetching ? (
+        <div className="bg-card rounded-lg border border-border p-12 text-center">
+          <p className="text-sm text-muted-foreground">Loading teachers...</p>
+        </div>
+      ) : teachers.length === 0 ? (
         <div className="bg-card rounded-lg border border-border p-12 text-center">
           <p className="text-4xl mb-4">👨‍🏫</p>
-          <p className="text-base font-medium text-foreground">
-            No teachers yet
-          </p>
+          <p className="text-base font-medium text-foreground">No teachers yet</p>
           <p className="text-sm text-muted-foreground mt-1">
             Click the button above to add your first teacher
           </p>
@@ -277,21 +256,11 @@ export default function TeachersPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/50">
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Name
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Email
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Phone
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Subjects
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Status
-                </th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Name</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Email</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Phone</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Subjects</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -310,25 +279,18 @@ export default function TeachersPage() {
                       </p>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-sm text-foreground">
-                    {teacher.email}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-foreground">
-                    {teacher.phone}
-                  </td>
+                  <td className="px-4 py-3 text-sm text-foreground">{teacher.email}</td>
+                  <td className="px-4 py-3 text-sm text-foreground">{teacher.phone}</td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
-                      {teacher.subjects.slice(0, 2).map((s) => (
-                        <span
-                          key={s}
-                          className="px-2 py-0.5 rounded-full text-xs bg-muted text-muted-foreground"
-                        >
+                      {(teacher.subjects as string[]).slice(0, 2).map((s) => (
+                        <span key={s} className="px-2 py-0.5 rounded-full text-xs bg-muted text-muted-foreground">
                           {s}
                         </span>
                       ))}
-                      {teacher.subjects.length > 2 && (
+                      {(teacher.subjects as string[]).length > 2 && (
                         <span className="px-2 py-0.5 rounded-full text-xs bg-muted text-muted-foreground">
-                          +{teacher.subjects.length - 2} more
+                          +{(teacher.subjects as string[]).length - 2} more
                         </span>
                       )}
                     </div>

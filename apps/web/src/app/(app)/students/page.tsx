@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 
 // ---- TYPES ----
 interface Student {
@@ -43,6 +43,24 @@ export default function StudentsPage() {
   const [search, setSearch] = useState("")
   const [form, setForm] = useState(emptyForm)
   const [loading, setLoading] = useState(false)
+  const [fetching, setFetching] = useState(true)
+  const [error, setError] = useState("")
+
+  // Fetch students from API on load
+  useEffect(() => {
+    async function fetchStudents() {
+      try {
+        const res = await fetch("/api/students")
+        const data = await res.json() as { students: Student[] }
+        setStudents(data.students ?? [])
+      } catch {
+        setError("Failed to load students")
+      } finally {
+        setFetching(false)
+      }
+    }
+    void fetchStudents()
+  }, [])
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -50,31 +68,33 @@ export default function StudentsPage() {
     setForm((prev) => ({ ...prev, [e.target.id]: e.target.value }))
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
+    setError("")
 
-    // For now add student locally
-    // Later we will save to the database
-    const newStudent: Student = {
-      id: Date.now().toString(),
-      firstName: form.firstName,
-      lastName: form.lastName,
-      gradeLevel: form.gradeLevel,
-      gender: form.gender,
-      status: "active",
-      parentContact: {
-        name: form.parentName,
-        phone: form.parentPhone,
-      },
-    }
+    try {
+      const res = await fetch("/api/students", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      })
 
-    setTimeout(() => {
-      setStudents((prev) => [newStudent, ...prev])
+      const data = await res.json() as { student: Student; error?: string }
+
+      if (!res.ok) {
+        setError(data.error ?? "Failed to save student")
+        return
+      }
+
+      setStudents((prev) => [data.student, ...prev])
       setForm(emptyForm)
       setShowForm(false)
+    } catch {
+      setError("Something went wrong. Please try again.")
+    } finally {
       setLoading(false)
-    }, 500)
+    }
   }
 
   const filtered = students.filter((s) =>
@@ -103,6 +123,13 @@ export default function StudentsPage() {
         </button>
       </div>
 
+      {/* Error message */}
+      {error && (
+        <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
+      )}
+
       {/* Search */}
       <input
         type="text"
@@ -120,7 +147,6 @@ export default function StudentsPage() {
           </h3>
           <form onSubmit={handleSubmit} className="space-y-4">
 
-            {/* Name row */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label htmlFor="firstName" className="text-sm font-medium text-foreground">
@@ -150,7 +176,6 @@ export default function StudentsPage() {
               </div>
             </div>
 
-            {/* DOB and gender */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label htmlFor="dateOfBirth" className="text-sm font-medium text-foreground">
@@ -181,7 +206,6 @@ export default function StudentsPage() {
               </div>
             </div>
 
-            {/* Grade level */}
             <div className="space-y-2">
               <label htmlFor="gradeLevel" className="text-sm font-medium text-foreground">
                 Grade level
@@ -194,13 +218,12 @@ export default function StudentsPage() {
               >
                 {GRADE_LEVELS.map((g) => (
                   <option key={g} value={g}>
-                    {g.replace("_", " ")}
+                    {g.replace(/_/g, " ")}
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* Parent contact */}
             <div className="border-t border-border pt-4 space-y-3">
               <h4 className="text-sm font-medium text-foreground">
                 Parent / Guardian contact
@@ -251,7 +274,6 @@ export default function StudentsPage() {
               </div>
             </div>
 
-            {/* Actions */}
             <div className="flex gap-3 pt-2">
               <button
                 type="submit"
@@ -277,12 +299,14 @@ export default function StudentsPage() {
       )}
 
       {/* Students table */}
-      {students.length === 0 ? (
+      {fetching ? (
+        <div className="bg-card rounded-lg border border-border p-12 text-center">
+          <p className="text-sm text-muted-foreground">Loading students...</p>
+        </div>
+      ) : students.length === 0 ? (
         <div className="bg-card rounded-lg border border-border p-12 text-center">
           <p className="text-4xl mb-4">🎓</p>
-          <p className="text-base font-medium text-foreground">
-            No students yet
-          </p>
+          <p className="text-base font-medium text-foreground">No students yet</p>
           <p className="text-sm text-muted-foreground mt-1">
             Click the button above to add your first student
           </p>
@@ -292,21 +316,11 @@ export default function StudentsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/50">
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Name
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Grade
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Gender
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Parent
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Status
-                </th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Name</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Grade</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Gender</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Parent</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -320,25 +334,23 @@ export default function StudentsPage() {
                       <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium">
                         {student.firstName[0]}{student.lastName[0]}
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">
-                          {student.firstName} {student.lastName}
-                        </p>
-                      </div>
+                      <p className="text-sm font-medium text-foreground">
+                        {student.firstName} {student.lastName}
+                      </p>
                     </div>
                   </td>
                   <td className="px-4 py-3 text-sm text-foreground">
-                    {student.gradeLevel.replace("_", " ")}
+                    {student.gradeLevel.replace(/_/g, " ")}
                   </td>
                   <td className="px-4 py-3 text-sm text-foreground capitalize">
-                    {student.gender}
+                    {student.gender.toLowerCase()}
                   </td>
                   <td className="px-4 py-3">
                     <p className="text-sm text-foreground">
-                      {student.parentContact.name}
+                      {(student.parentContact as { name: string }).name}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {student.parentContact.phone}
+                      {(student.parentContact as { phone: string }).phone}
                     </p>
                   </td>
                   <td className="px-4 py-3">
