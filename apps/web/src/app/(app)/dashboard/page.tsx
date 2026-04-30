@@ -1,17 +1,18 @@
-// ============================================
-// DASHBOARD PAGE
-// Overview of the school's key metrics
-// ============================================
+"use client"
 
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import Link from "next/link"
-import type { Metadata } from "next"
 
-export const metadata: Metadata = {
-  title: "Dashboard",
+interface Stats {
+  totalStudents: number
+  totalTeachers: number
+  totalBilled: number
+  totalCollected: number
+  outstanding: number
+  attendanceRate: number
+  totalAttendanceRecords: number
 }
 
-// Stat card component
 function StatCard({
   title,
   value,
@@ -35,7 +36,6 @@ function StatCard({
   )
 }
 
-// Recent activity item
 function ActivityItem({
   title,
   description,
@@ -58,13 +58,38 @@ function ActivityItem({
 }
 
 export default function DashboardPage() {
+  const [stats, setStats] = useState<Stats | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const res = await fetch("/api/stats")
+        const data = await res.json() as Stats
+        setStats(data)
+      } catch {
+        console.error("Failed to fetch stats")
+      } finally {
+        setLoading(false)
+      }
+    }
+    void fetchStats()
+  }, [])
+
+  const greeting = () => {
+    const hour = new Date().getHours()
+    if (hour < 12) return "Good morning"
+    if (hour < 17) return "Good afternoon"
+    return "Good evening"
+  }
+
   return (
     <div className="space-y-6">
 
       {/* Page header */}
       <div>
         <h2 className="text-2xl font-bold text-foreground">
-          Good morning 👋
+          {greeting()} 👋
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
           Here is what is happening at your school today
@@ -72,32 +97,55 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Total Students"
-          value="0"
-          description="No students enrolled yet"
-          icon="🎓"
-        />
-        <StatCard
-          title="Total Teachers"
-          value="0"
-          description="No teachers added yet"
-          icon="👨‍🏫"
-        />
-        <StatCard
-          title="Attendance Today"
-          value="0%"
-          description="No attendance recorded yet"
-          icon="✅"
-        />
-        <StatCard
-          title="Fees Collected"
-          value="$0"
-          description="No payments received yet"
-          icon="💰"
-        />
-      </div>
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="bg-card rounded-lg border border-border p-6 animate-pulse"
+            >
+              <div className="h-4 bg-muted rounded w-24 mb-4" />
+              <div className="h-8 bg-muted rounded w-16 mb-2" />
+              <div className="h-3 bg-muted rounded w-32" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            title="Total Students"
+            value={stats?.totalStudents.toString() ?? "0"}
+            description="Active enrolled students"
+            icon="🎓"
+          />
+          <StatCard
+            title="Total Teachers"
+            value={stats?.totalTeachers.toString() ?? "0"}
+            description="Active teaching staff"
+            icon="👨‍🏫"
+          />
+          <StatCard
+            title="Attendance Today"
+            value={
+              stats?.totalAttendanceRecords === 0
+                ? "N/A"
+                : `${stats?.attendanceRate ?? 0}%`
+            }
+            description={
+              stats?.totalAttendanceRecords === 0
+                ? "No attendance recorded today"
+                : `${stats?.totalAttendanceRecords} records today`
+            }
+            icon="✅"
+          />
+          <StatCard
+            title="Fees Collected"
+            value={`$${(stats?.totalCollected ?? 0).toFixed(2)}`}
+            description={`$${(stats?.outstanding ?? 0).toFixed(2)} outstanding`}
+            icon="💰"
+          />
+        </div>
+      )}
 
       {/* Bottom grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -108,11 +156,37 @@ export default function DashboardPage() {
             Recent Activity
           </h3>
           <div className="space-y-0">
-            <ActivityItem
-              title="System ready"
-              description="Your school management system is set up and ready to use"
-              time="Just now"
-            />
+            {stats?.totalStudents === 0 && stats?.totalTeachers === 0 ? (
+              <ActivityItem
+                title="System ready"
+                description="Your school management system is set up and ready to use"
+                time="Just now"
+              />
+            ) : (
+              <>
+                {(stats?.totalStudents ?? 0) > 0 && (
+                  <ActivityItem
+                    title="Students enrolled"
+                    description={`${stats?.totalStudents} active students in the system`}
+                    time="Today"
+                  />
+                )}
+                {(stats?.totalTeachers ?? 0) > 0 && (
+                  <ActivityItem
+                    title="Teachers registered"
+                    description={`${stats?.totalTeachers} active teachers on staff`}
+                    time="Today"
+                  />
+                )}
+                {(stats?.totalBilled ?? 0) > 0 && (
+                  <ActivityItem
+                    title="Invoices created"
+                    description={`$${(stats?.totalBilled ?? 0).toFixed(2)} total billed to students`}
+                    time="Today"
+                  />
+                )}
+              </>
+            )}
           </div>
         </div>
 
@@ -122,8 +196,8 @@ export default function DashboardPage() {
             Quick Actions
           </h3>
           <div className="space-y-2">
-            
-              <Link href="/students"
+            <Link
+              href="/students"
               className="flex items-center gap-3 p-3 rounded-md border border-border hover:bg-muted transition-colors"
             >
               <span className="text-xl">🎓</span>
@@ -136,8 +210,8 @@ export default function DashboardPage() {
                 </p>
               </div>
             </Link>
-            
-              <Link href="/teachers"
+            <Link
+              href="/teachers"
               className="flex items-center gap-3 p-3 rounded-md border border-border hover:bg-muted transition-colors"
             >
               <span className="text-xl">👨‍🏫</span>
@@ -150,8 +224,22 @@ export default function DashboardPage() {
                 </p>
               </div>
             </Link>
-            
-            <Link href="/fees"
+            <Link
+              href="/attendance"
+              className="flex items-center gap-3 p-3 rounded-md border border-border hover:bg-muted transition-colors"
+            >
+              <span className="text-xl">✅</span>
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  Record attendance
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Mark today's attendance
+                </p>
+              </div>
+            </Link>
+            <Link
+              href="/fees"
               className="flex items-center gap-3 p-3 rounded-md border border-border hover:bg-muted transition-colors"
             >
               <span className="text-xl">💰</span>
