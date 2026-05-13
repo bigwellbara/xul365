@@ -143,12 +143,14 @@ import {
   DollarSign,
   Settings,
   LogOut,
+  School,
 } from "lucide-react"
 
 const navLinks = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/students", label: "Students", icon: GraduationCap },
   { href: "/teachers", label: "Teachers", icon: Users },
+  { href: "/classes", label: "Classes", icon: School },
   { href: "/attendance", label: "Attendance", icon: CheckCircle },
   { href: "/fees", label: "Fees", icon: DollarSign },
   { href: "/settings", label: "Settings", icon: Settings },

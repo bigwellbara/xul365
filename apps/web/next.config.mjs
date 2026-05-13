@@ -8,6 +8,11 @@ const nextConfig = {
     "@xul365/ui",
   ],
 
+  // Suppress lockfile patch warning in monorepo
+  experimental: {
+    missingSuspenseWithCSRBailout: false,
+  },
+
   images: {
     remotePatterns: [
       {
