@@ -275,6 +275,7 @@ model Exam {
   gradeLevel   String
   startDate    DateTime
   endDate      DateTime
+  createdAt    DateTime @default(now())
 
   results ExamResult[]
 
