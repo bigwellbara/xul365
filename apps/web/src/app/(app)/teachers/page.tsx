@@ -1,6 +1,8 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
+import { Trash2 } from "lucide-react"
+import { ConfirmModal } from "@/components/ui/confirm-modal"
 
 interface Teacher {
   id: string
@@ -38,6 +40,18 @@ export default function TeachersPage() {
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
   const [error, setError] = useState("")
+
+
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmConfig, setConfirmConfig] = useState<{
+    title: string
+    message: string
+    onConfirm: () => void
+  }>({
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  })
 
   useEffect(() => {
     async function fetchTeachers() {
@@ -102,6 +116,34 @@ export default function TeachersPage() {
       .toLowerCase()
       .includes(search.toLowerCase())
   )
+
+  function showConfirm(title: string, message: string, onConfirm: () => void) {
+  setConfirmConfig({ title, message, onConfirm })
+  setConfirmOpen(true)
+}
+
+async function handleDeleteTeacher(teacherId: string) {
+  showConfirm(
+    "Delete teacher",
+    "Are you sure you want to delete this teacher? This action cannot be undone.",
+    async () => {
+      setConfirmOpen(false)
+      try {
+        const res = await fetch(`/api/teachers/${teacherId}`, {
+          method: "DELETE",
+        })
+        if (!res.ok) {
+          const data = await res.json() as { error?: string }
+          setError(data.error ?? "Failed to delete teacher")
+          return
+        }
+        setTeachers((prev) => prev.filter((t) => t.id !== teacherId))
+      } catch {
+        setError("Something went wrong")
+      }
+    }
+  )
+}
 
   return (
     <div className="space-y-6">
@@ -261,6 +303,7 @@ export default function TeachersPage() {
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Phone</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Subjects</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Status</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -300,12 +343,34 @@ export default function TeachersPage() {
                       Active
                     </span>
                   </td>
+
+
+                      <td className="px-4 py-3">
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteTeacher(teacher.id)}
+                          className="text-muted-foreground hover:text-red-600 transition-colors"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
+
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+
+
+      <ConfirmModal
+        open={confirmOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        confirmLabel="Yes, delete"
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmOpen(false)}
+      />
 
     </div>
   )

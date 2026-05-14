@@ -1,6 +1,8 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
+import { Trash2 } from "lucide-react"
+import { ConfirmModal } from "@/components/ui/confirm-modal"
 
 // ---- TYPES ----
 interface Student {
@@ -37,6 +39,11 @@ const emptyForm = {
   parentRelationship: "mother",
 }
 
+
+
+
+
+
 export default function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([])
   const [showForm, setShowForm] = useState(false)
@@ -45,6 +52,17 @@ export default function StudentsPage() {
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
   const [error, setError] = useState("")
+  const [confirmOpen, setConfirmOpen] = useState(false)
+
+  const [confirmConfig, setConfirmConfig] = useState<{
+    title: string
+    message: string
+    onConfirm: () => void
+  }>({
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  })
 
   // Fetch students from API on load
   useEffect(() => {
@@ -102,6 +120,34 @@ export default function StudentsPage() {
       .toLowerCase()
       .includes(search.toLowerCase())
   )
+
+  async function handleDeleteStudent(studentId: string) {
+  showConfirm(
+    "Delete student",
+    "Are you sure you want to delete this student? All their records will be permanently removed.",
+    async () => {
+      setConfirmOpen(false)
+      try {
+        const res = await fetch(`/api/students/${studentId}`, {
+          method: "DELETE",
+        })
+        if (!res.ok) {
+          const data = await res.json() as { error?: string }
+          setError(data.error ?? "Failed to delete student")
+          return
+        }
+        setStudents((prev) => prev.filter((s) => s.id !== studentId))
+      } catch {
+        setError("Something went wrong")
+      }
+    }
+  )
+}
+
+function showConfirm(title: string, message: string, onConfirm: () => void) {
+  setConfirmConfig({ title, message, onConfirm })
+  setConfirmOpen(true)
+}
 
   return (
     <div className="space-y-6">
@@ -321,6 +367,7 @@ export default function StudentsPage() {
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Gender</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Parent</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Status</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -358,12 +405,32 @@ export default function StudentsPage() {
                       Active
                     </span>
                   </td>
+                  <td className="px-4 py-3">
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteStudent(student.id)}
+                      className="text-muted-foreground hover:text-red-600 transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </td>
+
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+
+
+      <ConfirmModal
+        open={confirmOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        confirmLabel="Yes, delete"
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmOpen(false)}
+      />
 
     </div>
   )

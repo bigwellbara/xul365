@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
+import { ConfirmModal } from "@/components/ui/confirm-modal"
 
 interface Teacher {
   id: string
@@ -58,6 +59,17 @@ export default function ClassesPage() {
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
   const [error, setError] = useState("")
+
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmConfig, setConfirmConfig] = useState<{
+          title: string
+          message: string
+          onConfirm: () => void
+        }>({
+          title: "",
+          message: "",
+          onConfirm: () => {},
+        })
 
   useEffect(() => {
     async function fetchData() {
@@ -162,6 +174,75 @@ export default function ClassesPage() {
       setLoading(false)
     }
   }
+
+async function handleUnenrollStudent(classId: string, studentId: string) {
+  showConfirm(
+    "Remove student",
+    "Are you sure you want to remove this student from the class?",
+    async () => {
+      setConfirmOpen(false)
+      setLoading(true)
+      setError("")
+      try {
+        const res = await fetch("/api/classes/unenroll", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ classId, studentId }),
+        })
+        const data = await res.json() as { error?: string }
+        if (!res.ok) {
+          setError(data.error ?? "Failed to unenroll student")
+          return
+        }
+        const classesRes = await fetch("/api/classes")
+        const classesData = await classesRes.json() as { classes: ClassItem[] }
+        setClasses(classesData.classes ?? [])
+        const updated = classesData.classes.find((c) => c.id === classId)
+        if (updated) setSelectedClass(updated)
+      } catch {
+        setError("Something went wrong")
+      } finally {
+        setLoading(false)
+      }
+    }
+  )
+}
+
+
+async function handleDeleteClass(classId: string) {
+  showConfirm(
+    "Delete class",
+    "Are you sure you want to delete this class? This action cannot be undone.",
+    async () => {
+      setConfirmOpen(false)
+      setLoading(true)
+      setError("")
+      try {
+        const res = await fetch("/api/classes/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ classId }),
+        })
+        const data = await res.json() as { error?: string }
+        if (!res.ok) {
+          setError(data.error ?? "Failed to delete class")
+          return
+        }
+        setClasses((prev) => prev.filter((c) => c.id !== classId))
+      } catch {
+        setError("Something went wrong")
+      } finally {
+        setLoading(false)
+      }
+    }
+  )
+}
+
+
+function showConfirm(title: string, message: string, onConfirm: () => void) {
+  setConfirmConfig({ title, message, onConfirm })
+  setConfirmOpen(true)
+}
 
   return (
     <div className="space-y-6">
@@ -322,7 +403,7 @@ export default function ClassesPage() {
               key={cls.id}
               className="bg-card rounded-lg border border-border p-5 space-y-3"
             >
-              <div className="flex items-start justify-between">
+           <div className="flex items-start justify-between">
                 <div>
                   <h3 className="text-base font-semibold text-foreground">
                     {cls.name}
@@ -331,10 +412,21 @@ export default function ClassesPage() {
                     {cls.gradeLevel.replace(/_/g, " ")} · {cls.academicYear}
                   </p>
                 </div>
-                <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-medium">
-                  {cls.enrollments.length}/{cls.capacity}
-                </span>
-              </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-medium">
+                    {cls.enrollments.length}/{cls.capacity}
+                  </span>
+                  {cls.enrollments.length === 0 && (
+                    <button
+                      type="button"
+                      onClick={() => void handleDeleteClass(cls.id)}
+                      className="text-xs text-red-500 hover:text-red-700 transition-colors"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
+              </div> 
 
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium">
@@ -346,20 +438,32 @@ export default function ClassesPage() {
               </div>
 
               {/* Enrolled students */}
-              {cls.enrollments.length > 0 && (
-                <div className="border-t border-border pt-3">
-                  <p className="text-xs text-muted-foreground mb-2">
-                    {cls.enrollments.length} student{cls.enrollments.length !== 1 ? "s" : ""} enrolled
-                  </p>
-                  <div className="space-y-1 max-h-32 overflow-y-auto">
-                    {cls.enrollments.map((e) => (
-                      <p key={e.student.id} className="text-xs text-foreground">
-                        {e.student.firstName} {e.student.lastName}
-                      </p>
-                    ))}
+           {cls.enrollments.length > 0 && (
+                  <div className="border-t border-border pt-3">
+                    <p className="text-xs text-muted-foreground mb-2">
+                      {cls.enrollments.length} student{cls.enrollments.length !== 1 ? "s" : ""} enrolled
+                    </p>
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {cls.enrollments.map((e) => (
+                        <div
+                          key={e.student.id}
+                          className="flex items-center justify-between gap-2"
+                        >
+                          <p className="text-xs text-foreground">
+                            {e.student.firstName} {e.student.lastName}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => void handleUnenrollStudent(cls.id, e.student.id)}
+                            className="text-xs text-red-500 hover:text-red-700 transition-colors shrink-0"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               <button
                 type="button"
@@ -397,11 +501,12 @@ export default function ClassesPage() {
                 <option value="">Choose a student...</option>
                 {students
                   .filter(
-                    (s) =>
-                      !selectedClass.enrollments.some(
-                        (e) => e.student.id === s.id
-                      )
-                  )
+                      (s) =>
+                        s.gradeLevel === selectedClass.gradeLevel &&
+                        !selectedClass.enrollments.some(
+                          (e) => e.student.id === s.id
+                        )
+                    )
                   .map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.firstName} {s.lastName} — {s.gradeLevel.replace(/_/g, " ")}
@@ -434,6 +539,16 @@ export default function ClassesPage() {
           </div>
         </div>
       )}
+
+
+      <ConfirmModal
+        open={confirmOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        confirmLabel="Yes, confirm"
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmOpen(false)}
+      />
 
     </div>
   )
