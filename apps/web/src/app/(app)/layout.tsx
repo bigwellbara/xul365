@@ -145,6 +145,7 @@ import {
   LogOut,
   School,
   BookOpen,
+  Library,
 } from "lucide-react"
 
 const navLinks = [
@@ -155,6 +156,7 @@ const navLinks = [
   { href: "/attendance", label: "Attendance", icon: CheckCircle },
   { href: "/exams", label: "Exams", icon: BookOpen },
   { href: "/fees", label: "Fees", icon: DollarSign },
+  { href: "/subjects", label: "Subjects", icon: Library },
   { href: "/settings", label: "Settings", icon: Settings },
 ]
 

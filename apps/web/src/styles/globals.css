@@ -75,3 +75,24 @@
     @apply bg-background text-foreground;
   }
 }
+
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #report-card-print,
+  #report-card-print * {
+    visibility: visible;
+  }
+
+  #report-card-print {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 20px;
+    background: white;
+  }
+}

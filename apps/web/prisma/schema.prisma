@@ -164,6 +164,7 @@ model Student {
   enrollments  Enrollment[]
   attendance   AttendanceRecord[]
   invoices     Invoice[]
+  examResults  ExamResult[]
 
   @@map("students")
 }
@@ -293,6 +294,7 @@ model ExamResult {
   comments  String? @db.Text
 
   exam    Exam    @relation(fields: [examId], references: [id])
+  student Student @relation(fields: [studentId], references: [id])
   subject Subject @relation(fields: [subjectId], references: [id])
 
   @@unique([examId, studentId, subjectId])
