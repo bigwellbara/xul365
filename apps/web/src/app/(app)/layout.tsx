@@ -145,6 +145,8 @@ import {
   LogOut,
   School,
   BookOpen,
+  FileText,
+  CalendarDays,
   Library,
 } from "lucide-react"
 
@@ -157,6 +159,8 @@ const navLinks = [
   { href: "/exams", label: "Exams", icon: BookOpen },
   { href: "/fees", label: "Fees", icon: DollarSign },
   { href: "/subjects", label: "Subjects", icon: Library },
+  { href: "/report-cards", label: "Report Cards", icon: FileText },
+  { href: "/timetable", label: "Timetable", icon: CalendarDays },
   { href: "/settings", label: "Settings", icon: Settings },
 ]
 
