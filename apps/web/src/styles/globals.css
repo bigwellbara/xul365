@@ -3,68 +3,67 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    /* Default theme - overridden per tenant */
-    --primary: 221 83% 53%;
-    --primary-foreground: 0 0% 100%;
+ :root {
+  --primary: 221 83% 53%;
+  --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
+  /* Softer UI surfaces (Enigma-like) */
+  --background: 0 0% 98%;
+  --foreground: 222 47% 11%;
 
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
 
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
+  --muted: 210 40% 97%;
+  --muted-foreground: 215 16% 46%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222 47% 11%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222 47% 11%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+  /* Softer borders (important for modern SaaS feel) */
+  --border: 214 32% 93%;
+  --input: 214 32% 93%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+  --ring: 221 83% 53%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 221 83% 53%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
 
-    --radius: 0.5rem;
-  }
+  --radius: 0.75rem;
+}
 
-  .dark {
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
+.dark {
+  --primary: 217 91% 60%;
+  --primary-foreground: 0 0% 100%;
 
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 0 0% 100%;
+  /* Deep SaaS dark (not pure black) */
+  --background: 222 47% 7%;
+  --foreground: 210 40% 98%;
 
-    --accent: 217 33% 17%;
-    --accent-foreground: 0 0% 100%;
+  --card: 222 47% 9%;
+  --card-foreground: 210 40% 98%;
 
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
+  --muted: 217 33% 14%;
+  --muted-foreground: 215 20% 65%;
 
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
+  --secondary: 217 33% 14%;
+  --secondary-foreground: 0 0% 100%;
 
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
+  --accent: 217 33% 14%;
+  --accent-foreground: 0 0% 100%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+  /* softer borders (key Enigma feel) */
+  --border: 217 33% 14%;
+  --input: 217 33% 14%;
 
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 0 0% 100%;
+  --ring: 224 76% 48%;
 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 224 76% 48%;
-  }
+  --destructive: 0 62% 30%;
+  --destructive-foreground: 0 0% 100%;
+}
 }
 
 @layer base {
@@ -94,5 +93,32 @@
     width: 100%;
     padding: 20px;
     background: white;
+  }
+}
+
+
+@layer base {
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+
+  /* smoother UI feel like admin dashboards */
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+
+@layer components {
+  .card {
+    @apply bg-card text-card-foreground rounded-xl border shadow-sm;
+  }
+
+  .card-hover {
+    @apply transition hover:shadow-md hover:-translate-y-0.5;
   }
 }

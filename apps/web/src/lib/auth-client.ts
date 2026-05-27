@@ -1,10 +1,7 @@
-// // ============================================
-// // AUTH CLIENT
-// // Used in client components to access session
-// // and call auth actions like sign in / sign out
-// // ============================================
 
 // import { createAuthClient } from "better-auth/client"
+
+// import { createAuthClient } from "better-auth/react"
 
 // export const authClient = createAuthClient({
 //   baseURL: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
@@ -17,15 +14,14 @@
 //   useSession,
 // } = authClient
 
-import { createAuthClient } from "better-auth/client"
+
+import { createAuthClient } from "better-auth/react"
 
 export const authClient = createAuthClient({
   baseURL: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
-})
+}) as any
 
-export const {
-  signIn,
-  signOut,
-  signUp,
-  useSession,
-} = authClient
+export const signIn = authClient.signIn
+export const signOut = authClient.signOut
+export const signUp = authClient.signUp
+export const useSession = authClient.useSession
