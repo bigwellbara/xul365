@@ -620,10 +620,7 @@ export default function AppLayout({
         >
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center font-bold shadow-md shrink-0 text-sm"
-            style={{
-              backgroundColor: theme.primaryColor,
-              color: theme.primaryText,
-            }}
+            style={{backgroundColor: theme.primaryColor,color: theme.primaryText,}}
           >
             X
           </div>

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { ChevronRight, Search, Plus, BookOpen, Users, UserRound, Trash2, UserMinus, GraduationCap } from "lucide-react"
 import { ConfirmModal } from "@/components/ui/confirm-modal"
+import { useTheme } from "@/components/providers/theme-provider"
 
 interface Teacher {
   id: string
@@ -57,6 +58,8 @@ export default function ClassesPage() {
   const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null)
   const [selectedStudentId, setSelectedStudentId] = useState("")
   const [form, setForm] = useState(emptyForm)
+  const { theme } = useTheme()
+  const [focused, setFocused] = useState(false);
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
   const [error, setError] = useState("")
@@ -232,6 +235,7 @@ export default function ClassesPage() {
           type="button"
           onClick={() => { setShowForm(true); setSelectedClass(null) }}
           className="flex items-center gap-2 py-2 px-4 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:opacity-90 transition-opacity"
+           style={{backgroundColor: theme.primaryColor,color: theme.primaryText,}}
         >
           <Plus size={15} />
           Create class
@@ -257,7 +261,14 @@ export default function ClassesPage() {
                 placeholder="Search classes..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                onFocus={() => setFocused(true)} 
+                      onBlur={() => setFocused(false)}
                 className="w-full pl-8 pr-3 py-1.5 border border-input rounded-md bg-background text-foreground text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              
+                 style={{
+                            border: `1px solid ${focused ? theme.primaryColor : "#d1d5db"}`,
+                            boxShadow: focused ? `0 0 0 2px ${theme.primaryColor}` : "none",
+                          }}
               />
             </div>
           </div>
@@ -293,7 +304,12 @@ export default function ClassesPage() {
                   }`}
                 >
                   <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <BookOpen size={15} className="text-primary" />
+                    <BookOpen size={15} className="text-primary" 
+                    style={{
+              
+              color: theme.primaryColor,
+            }}
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{cls.name}</p>
@@ -302,7 +318,12 @@ export default function ClassesPage() {
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0">
-                    <span className="text-xs font-medium text-primary">
+                    <span className="text-xs font-medium text-primary"
+                    style={{
+       
+              color: theme.primaryColor,
+            }}
+                    >
                       {cls.enrollments.length}/{cls.capacity}
                     </span>
                     <ChevronRight size={12} className="text-muted-foreground" />
@@ -324,14 +345,39 @@ export default function ClassesPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label htmlFor="name" className="text-sm font-medium text-foreground">Class name</label>
-                    <input id="name" type="text" value={form.name} onChange={handleChange}
+                    {/* <input id="name" type="text" value={form.name} onChange={handleChange}
                       placeholder="e.g. Form 1A" required
-                      className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                      className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"   /> */}
+                      <input
+                          id="name"
+                          type="text"
+                          value={form.name}
+                          onChange={handleChange}
+                          onFocus={() => setFocused(true)}
+                          onBlur={() => setFocused(false)}
+                          placeholder="e.g. Form 1A"
+                          required
+                          className="w-full px-3 py-2 rounded-md bg-background text-foreground text-sm focus:outline-none"
+                          style={{
+                            border: `1px solid ${focused ? theme.primaryColor : "#d1d5db"}`,
+                            boxShadow: focused ? `0 0 0 2px ${theme.primaryColor}` : "none",
+                          }}
+                        />
+
+
                   </div>
                   <div className="space-y-2">
                     <label htmlFor="gradeLevel" className="text-sm font-medium text-foreground">Grade level</label>
-                    <select id="gradeLevel" value={form.gradeLevel} onChange={handleChange}
-                      className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                    <select id="gradeLevel" value={form.gradeLevel}
+                      onChange={handleChange} 
+                      onFocus={() => setFocused(true)} 
+                      onBlur={() => setFocused(false)}
+                      className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      style={{
+                            border: `1px solid ${focused ? theme.primaryColor : "#d1d5db"}`,
+                            boxShadow: focused ? `0 0 0 2px ${theme.primaryColor}` : "none",
+                          }}
+                      >
                       {GRADE_LEVELS.map((g) => <option key={g} value={g}>{g.replace(/_/g, " ")}</option>)}
                     </select>
                   </div>
@@ -340,7 +386,14 @@ export default function ClassesPage() {
                   <div className="space-y-2">
                     <label htmlFor="teacherId" className="text-sm font-medium text-foreground">Class teacher</label>
                     <select id="teacherId" value={form.teacherId} onChange={handleChange}
-                      className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                     onFocus={() => setFocused(true)} 
+                      onBlur={() => setFocused(false)}
+                      className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      style={{
+                            border: `1px solid ${focused ? theme.primaryColor : "#d1d5db"}`,
+                            boxShadow: focused ? `0 0 0 2px ${theme.primaryColor}` : "none",
+                          }}
+                      >
                       {teachers.length === 0
                         ? <option value="">No teachers yet</option>
                         : teachers.map((t) => <option key={t.id} value={t.id}>{t.firstName} {t.lastName}</option>)
@@ -350,18 +403,33 @@ export default function ClassesPage() {
                   <div className="space-y-2">
                     <label htmlFor="academicYear" className="text-sm font-medium text-foreground">Academic year</label>
                     <input id="academicYear" type="text" value={form.academicYear} onChange={handleChange}
-                      className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                    onFocus={() => setFocused(true)} 
+                      onBlur={() => setFocused(false)}
+                      className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      
+                      style={{
+                            border: `1px solid ${focused ? theme.primaryColor : "#d1d5db"}`,
+                            boxShadow: focused ? `0 0 0 2px ${theme.primaryColor}` : "none",
+                          }}
+                      />
                   </div>
                   <div className="space-y-2">
                     <label htmlFor="capacity" className="text-sm font-medium text-foreground">Capacity</label>
                     <input id="capacity" type="number" value={form.capacity} onChange={handleChange} min="1" max="100"
-                      className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                      onFocus={() => setFocused(true)} 
+                      onBlur={() => setFocused(false)}
+                      className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring" 
+                      style={{
+                            border: `1px solid ${focused ? theme.primaryColor : "#d1d5db"}`,
+                            boxShadow: focused ? `0 0 0 2px ${theme.primaryColor}` : "none",
+                          }}
+                      />
                   </div>
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button type="button" onClick={() => void handleCreateClass()}
                     disabled={loading || !form.name || !form.teacherId}
-                    className="py-2 px-4 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50">
+                    className="py-2 px-4 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"  style={{backgroundColor: theme.primaryColor,color: theme.primaryText,}}>
                     {loading ? "Creating..." : "Create class"}
                   </button>
                   <button type="button" onClick={() => { setShowForm(false); setForm(emptyForm) }}
@@ -380,15 +448,25 @@ export default function ClassesPage() {
               {/* Header */}
               <div className="flex items-start justify-between pb-5 border-b border-border">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <BookOpen size={24} className="text-primary" />
+                  <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center" >
+                    <BookOpen size={24} className="text-primary" 
+                    style={{
+             
+              color: theme.primaryColor,
+            }}
+                    />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-foreground">{selectedClass.name}</h3>
                     <p className="text-sm text-muted-foreground mt-0.5">
                       {selectedClass.gradeLevel.replace(/_/g, " ")} · {selectedClass.academicYear}
                     </p>
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary mt-2">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10  mt-2"
+                    style={{
+              
+              color: theme.primaryColor,
+            }}
+                    >
                       <Users size={11} />
                       {selectedClass.enrollments.length} / {selectedClass.capacity} students
                     </span>
@@ -399,6 +477,10 @@ export default function ClassesPage() {
                     type="button"
                     onClick={() => setShowEnrollForm(true)}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity"
+                  style={{
+              backgroundColor: theme.primaryColor,
+              color: theme.primaryText,
+            }}
                   >
                     <Plus size={14} />
                     Enroll student
@@ -420,7 +502,8 @@ export default function ClassesPage() {
               <div className="grid grid-cols-3 gap-4">
                 <div className="bg-muted/40 rounded-lg p-4 space-y-1">
                   <p className="text-xs text-muted-foreground">Grade level</p>
-                  <p className="text-sm font-medium text-foreground">{selectedClass.gradeLevel.replace(/_/g, " ")}</p>
+                  <p className="text-sm font-medium text-foreground" 
+                  >{selectedClass.gradeLevel.replace(/_/g, " ")}</p>
                 </div>
                 <div className="bg-muted/40 rounded-lg p-4 space-y-1">
                   <p className="text-xs text-muted-foreground">Academic year</p>
@@ -439,7 +522,12 @@ export default function ClassesPage() {
                   Class teacher
                 </h4>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm"
+                  style={{
+             
+              color: theme.primaryColor,
+            }}
+                  >
                     {selectedClass.teacher.firstName[0]}{selectedClass.teacher.lastName[0]}
                   </div>
                   <p className="text-sm font-medium text-foreground">
@@ -486,7 +574,12 @@ export default function ClassesPage() {
                         <tr key={e.student.id} className={`border-b border-border last:border-0 ${i % 2 === 0 ? "bg-muted/20" : ""}`}>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold shrink-0">
+                              <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold shrink-0"
+                              style={{
+             
+              color: theme.primaryColor,
+            }}
+                              >
                                 {e.student.firstName[0]}{e.student.lastName[0]}
                               </div>
                               <p className="text-sm font-medium text-foreground">
