@@ -1,0 +1,142 @@
+// ============================================
+// MOTHERSHIP SCHEMA
+// Central database - tracks all schools
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/mothership"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("MOTHERSHIP_DATABASE_URL")
+}
+
+// ---- USER (Auth) ----
+model User {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  tenantId      String?
+  role          String   @default("admin")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sessions Session[]
+  accounts Account[]
+
+  @@map("users")
+}
+
+// ---- SESSION ----
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// ---- ACCOUNT ----
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  idToken               String?   @db.Text
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("accounts")
+}
+
+// ---- VERIFICATION ----
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verifications")
+}
+
+// ---- TENANT (School) ----
+model Tenant {
+  id                 String   @id @default(cuid())
+  schoolName         String
+  subdomain          String   @unique
+  databaseName       String   @unique
+  subscriptionStatus String   @default("TRIAL")
+  branding           Json
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  subscription Subscription?
+  payments     MothershipPayment[]
+
+  @@map("tenants")
+}
+
+// ---- SUBSCRIPTION ----
+model Subscription {
+  id               String   @id @default(cuid())
+  tenantId         String   @unique
+  selectedFeatures Json
+  billingCycle     String
+  priceUsd         Decimal  @db.Decimal(10, 2)
+  startDate        DateTime
+  endDate          DateTime
+  status           String
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("subscriptions")
+}
+
+// ---- MOTHERSHIP PAYMENTS ----
+model MothershipPayment {
+  id        String   @id @default(cuid())
+  tenantId  String
+  amountUsd Decimal  @db.Decimal(10, 2)
+  currency  String
+  method    String
+  reference String   @unique
+  status    String   @default("PENDING")
+  paidAt    DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("mothership_payments")
+}
+
+// ---- FEATURE PRICING ----
+model FeaturePricing {
+  id          String  @id @default(cuid())
+  featureKey  String  @unique
+  name        String
+  description String  @db.Text
+  priceUsd    Decimal @db.Decimal(10, 2)
+  isActive    Boolean @default(true)
+
+  @@map("feature_pricing")
+}

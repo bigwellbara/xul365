@@ -658,7 +658,7 @@ export default function StudentsPage() {
                       {student.firstName} {student.lastName}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {student.gradeLevel.replace(/_/g, " ")}
+                     {student.gradeLevel?.replace(/_/g, " ") ?? "—"}
                     </p>
                   </div>
                   <ChevronRight size={14} className="text-muted-foreground shrink-0" />
@@ -772,7 +772,7 @@ export default function StudentsPage() {
             {selected.firstName} {selected.lastName}
           </h3>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {selected.gradeLevel.replace(/_/g, " ")}
+             {selected.gradeLevel?.replace(/_/g, " ") ?? "—"}
           </p>
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mt-2">
             Active
@@ -790,7 +790,7 @@ export default function StudentsPage() {
   <div className="flex items-center gap-2.5">
     <Phone size={14} className="text-muted-foreground shrink-0" />
     <span className="text-sm text-muted-foreground">
-      {(selected.parentContact as { phone: string }).phone}
+      {(selected.parentContact?.phone) ?? "—"}
     </span>
   </div>
   <div className="flex items-center gap-2.5">

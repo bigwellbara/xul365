@@ -1,10 +1,11 @@
 // ============================================
-// XUL365 - MERGED DATABASE SCHEMA
-// Contains both mothership and tenant models
+// MOTHERSHIP SCHEMA
+// Central database - tracks all schools
 // ============================================
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/mothership"
 }
 
 datasource db {
@@ -12,28 +13,7 @@ datasource db {
   url      = env("MOTHERSHIP_DATABASE_URL")
 }
 
-// ============================================
-// MOTHERSHIP MODELS
-// ============================================
-
-// ---- TENANT (School) ----
-model Tenant {
-  id                 String              @id @default(cuid())
-  schoolName         String
-  subdomain          String              @unique
-  databaseName       String              @unique
-  subscriptionStatus String              @default("PENDING")
-  branding           Json
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-
-  subscription       Subscription?
-  payments           MothershipPayment[]
-
-  @@map("tenants")
-}
-
-// ---- USER ----
+// ---- USER (Auth) ----
 model User {
   id            String    @id @default(cuid())
   name          String
@@ -100,6 +80,23 @@ model Verification {
   @@map("verifications")
 }
 
+// ---- TENANT (School) ----
+model Tenant {
+  id                 String   @id @default(cuid())
+  schoolName         String
+  subdomain          String   @unique
+  databaseName       String   @unique
+  subscriptionStatus String   @default("TRIAL")
+  branding           Json
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  subscription Subscription?
+  payments     MothershipPayment[]
+
+  @@map("tenants")
+}
+
 // ---- SUBSCRIPTION ----
 model Subscription {
   id               String   @id @default(cuid())
@@ -142,198 +139,4 @@ model FeaturePricing {
   isActive    Boolean @default(true)
 
   @@map("feature_pricing")
-}
-
-// ============================================
-// TENANT MODELS
-// ============================================
-
-// ---- STUDENT ----
-model Student {
-  id             String        @id @default(cuid())
-  tenantId       String
-  firstName      String
-  lastName       String
-  dateOfBirth    DateTime
-  gender         String
-  gradeLevel     String
-  enrollmentDate DateTime      @default(now())
-  status         String        @default("ACTIVE")
-  parentContact  Json
-
-  enrollments  Enrollment[]
-  attendance   AttendanceRecord[]
-  invoices     Invoice[]
-  examResults  ExamResult[]
-
-  @@map("students")
-}
-
-// ---- TEACHER ----
-model Teacher {
-  id        String   @id @default(cuid())
-  tenantId  String
-  firstName String
-  lastName  String
-  email     String
-  phone     String
-  subjects  Json
-  status    String   @default("ACTIVE")
-  joinedAt  DateTime @default(now())
-
-  classes Class[]
-
-  @@map("teachers")
-}
-
-// ---- CLASS ----
-model Class {
-  id           String @id @default(cuid())
-  tenantId     String
-  name         String
-  gradeLevel   String
-  teacherId    String
-  academicYear String
-  capacity     Int    @default(40)
-
-  teacher     Teacher            @relation(fields: [teacherId], references: [id])
-  enrollments Enrollment[]
-  attendance  AttendanceRecord[]
-  timetable   Timetable[]
-
-  @@map("classes")
-}
-
-// ---- ENROLLMENT ----
-model Enrollment {
-  id         String   @id @default(cuid())
-  studentId  String
-  classId    String
-  enrolledAt DateTime @default(now())
-
-  student Student @relation(fields: [studentId], references: [id])
-  class   Class   @relation(fields: [classId], references: [id])
-
-  @@unique([studentId, classId])
-  @@map("enrollments")
-}
-
-// ---- ATTENDANCE ----
-model AttendanceRecord {
-  id         String   @id @default(cuid())
-  tenantId   String
-  studentId  String
-  classId    String
-  date       DateTime @db.Date
-  status     String
-  recordedBy String
-  createdAt  DateTime @default(now())
-
-  student Student @relation(fields: [studentId], references: [id])
-  class   Class   @relation(fields: [classId], references: [id])
-
-  @@unique([studentId, classId, date])
-  @@map("attendance_records")
-}
-
-// ---- SUBJECT ----
-model Subject {
-  id         String @id @default(cuid())
-  tenantId   String
-  name       String
-  code       String
-  gradeLevel String
-
-  timetable   Timetable[]
-  examResults ExamResult[]
-
-  @@unique([tenantId, code])
-  @@map("subjects")
-}
-
-// ---- TIMETABLE ----
-model Timetable {
-  id        String @id @default(cuid())
-  classId   String
-  subjectId String
-  dayOfWeek String
-  startTime String
-  endTime   String
-
-  class   Class   @relation(fields: [classId], references: [id])
-  subject Subject @relation(fields: [subjectId], references: [id])
-
-  @@map("timetable")
-}
-
-// ---- EXAM ----
-model Exam {
-  id           String   @id @default(cuid())
-  tenantId     String
-  name         String
-  academicYear String
-  term         String
-  gradeLevel   String
-  startDate    DateTime
-  endDate      DateTime
-  createdAt    DateTime @default(now())
-
-  results ExamResult[]
-
-  @@map("exams")
-}
-
-// ---- EXAM RESULT ----
-model ExamResult {
-  id        String  @id @default(cuid())
-  examId    String
-  studentId String
-  subjectId String
-  marks     Decimal @db.Decimal(5, 2)
-  grade     String
-  comments  String? @db.Text
-
-  exam    Exam    @relation(fields: [examId], references: [id])
-  student Student @relation(fields: [studentId], references: [id])
-  subject Subject @relation(fields: [subjectId], references: [id])
-
-  @@unique([examId, studentId, subjectId])
-  @@map("exam_results")
-}
-
-// ---- INVOICE ----
-model Invoice {
-  id             String   @id @default(cuid())
-  tenantId       String
-  studentId      String
-  academicYear   String
-  term           String
-  items          Json
-  totalAmountUsd Decimal  @db.Decimal(10, 2)
-  totalAmountZig Decimal  @db.Decimal(10, 2)
-  status         String   @default("UNPAID")
-  dueDate        DateTime
-  createdAt      DateTime @default(now())
-
-  student  Student   @relation(fields: [studentId], references: [id])
-  payments Payment[]
-
-  @@map("invoices")
-}
-
-// ---- PAYMENT ----
-model Payment {
-  id         String   @id @default(cuid())
-  tenantId   String
-  invoiceId  String
-  amountPaid Decimal  @db.Decimal(10, 2)
-  currency   String
-  method     String
-  reference  String   @unique
-  status     String   @default("PENDING")
-  paidAt     DateTime @default(now())
-
-  invoice Invoice @relation(fields: [invoiceId], references: [id])
-
-  @@map("payments")
 }

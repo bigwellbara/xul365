@@ -24,31 +24,96 @@ export default function RegisterPage() {
     setForm((prev) => ({ ...prev, [e.target.id]: e.target.value }))
   }
 
+  // async function handleSubmit(e: React.FormEvent) {
+  //   e.preventDefault()
+  //   setError("")
+  //   setLoading(true)
+
+  //   try {
+  //     const result = await signUp.email({
+  //       email: form.email,
+  //       password: form.password,
+  //       name: form.schoolName,
+  //     })
+
+  //     if (result.error) {
+  //       setError(result.error.message ?? "Registration failed")
+  //       return
+  //     }
+
+  //     // Redirect to onboarding after registration
+  //     router.push("/onboarding")
+  //   } catch {
+  //     setError("Something went wrong. Please try again.")
+  //   } finally {
+  //     setLoading(false)
+  //   }
+  // }
+
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError("")
-    setLoading(true)
+  e.preventDefault()
+  setError("")
+  setLoading(true)
 
-    try {
-      const result = await signUp.email({
-        email: form.email,
-        password: form.password,
-        name: form.schoolName,
-      })
+  try {
+    // Step 1: Create the user account
+    const result = await signUp.email({
+      email: form.email,
+      password: form.password,
+      name: form.schoolName,
+    })
 
-      if (result.error) {
-        setError(result.error.message ?? "Registration failed")
-        return
-      }
-
-      // Redirect to onboarding after registration
-      router.push("/onboarding")
-    } catch {
-      setError("Something went wrong. Please try again.")
-    } finally {
-      setLoading(false)
+    if (result.error) {
+      setError(result.error.message ?? "Registration failed")
+      return
     }
+
+    // Step 2: Provision the tenant (creates the school database)
+    const provisionRes = await fetch("/api/tenants/provision", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        schoolName: form.schoolName,
+        subdomain: form.subdomain,
+        branding: {
+          primaryColor: form.primaryColor,
+          secondaryColor: form.secondaryColor,
+          accentColor: form.accentColor,
+          location: form.location,
+        },
+      }),
+    })
+
+    const provisionData = await provisionRes.json()
+
+    if (!provisionRes.ok) {
+      setError(provisionData.error ?? "Failed to provision school")
+      return
+    }
+
+    // Step 3: Link the user to the tenant
+    const linkRes = await fetch("/api/tenants/link-user", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: result.data?.user?.id,
+        tenantId: provisionData.tenant.id,
+      }),
+    })
+
+    if (!linkRes.ok) {
+      setError("Failed to link user to school")
+      return
+    }
+
+    // Redirect to onboarding after registration
+    router.push("/onboarding")
+  } catch {
+    setError("Something went wrong. Please try again.")
+  } finally {
+    setLoading(false)
   }
+}
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">

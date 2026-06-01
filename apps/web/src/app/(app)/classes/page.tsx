@@ -141,7 +141,8 @@ export default function ClassesPage() {
     setLoading(true)
     setError("")
     try {
-      const res = await fetch("/api/enrollments", {
+      // const res = await fetch("/api/enrollments", {
+      const res = await fetch("/api/classes/enroll", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ classId: selectedClass.id, studentId: selectedStudentId }),

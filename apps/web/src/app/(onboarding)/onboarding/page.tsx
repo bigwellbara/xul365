@@ -131,14 +131,41 @@ export default function OnboardingPage() {
       ? monthlyTotal * 12 * 0.8
       : monthlyTotal
 
+  // async function handleContinue() {
+  //   setLoading(true)
+  //   // We will connect this to the API later
+  //   // For now just redirect to dashboard
+  //   setTimeout(() => {
+  //     router.push("/dashboard")
+  //   }, 1000)
+  // }
+
   async function handleContinue() {
-    setLoading(true)
-    // We will connect this to the API later
-    // For now just redirect to dashboard
-    setTimeout(() => {
-      router.push("/dashboard")
-    }, 1000)
+  setLoading(true)
+  try {
+    const res = await fetch("/api/subscription", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        selectedFeatures,
+        billingCycle,
+        priceUsd: totalPrice,
+      }),
+    })
+
+    if (!res.ok) {
+      const data = await res.json()
+      alert(data.error ?? "Failed to save subscription")
+      return
+    }
+
+    router.push("/dashboard")
+  } catch {
+    alert("Something went wrong")
+  } finally {
+    setLoading(false)
   }
+}
 
   return (
     <div className="space-y-8">
