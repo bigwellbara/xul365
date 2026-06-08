@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect, useRef } from "react"
 import { Search, Printer, FileText } from "lucide-react"
+import { FeatureGate } from "@/components/ui/feature-gate"
+import { useFeatures } from "@/hooks/use-features"
+
 
 interface Student {
   id: string
@@ -63,6 +66,7 @@ export default function ReportCardsPage() {
   const [fetching, setFetching] = useState(true)
   const [error, setError] = useState("")
   const printRef = useRef<HTMLDivElement>(null)
+  const { selectedFeatures } = useFeatures()
 
   useEffect(() => {
     async function fetchStudents() {
@@ -126,7 +130,13 @@ export default function ReportCardsPage() {
       : 0
 
   return (
-    <div className="space-y-6">
+    <FeatureGate
+      featureKey="exams_grading"
+      featureName="Report Cards"
+      description="Generate and print student exam report cards."
+      selectedFeatures={selectedFeatures}
+    >
+      <div className="space-y-6">
 
       <div>
         <h2 className="text-2xl font-bold text-foreground">Report Cards</h2>
@@ -444,5 +454,6 @@ export default function ReportCardsPage() {
       </div>
 
     </div>
+    </FeatureGate>
   )
 }

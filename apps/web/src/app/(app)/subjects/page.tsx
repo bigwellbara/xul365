@@ -343,6 +343,8 @@ import React, { useState, useEffect } from "react"
 import { Plus, Trash2, BookMarked, Search, ChevronRight } from "lucide-react"
 import { ConfirmModal } from "@/components/ui/confirm-modal"
 import { useTheme } from "@/components/providers/theme-provider"
+import { FeatureGate } from "@/components/ui/feature-gate"
+import { useFeatures } from "@/hooks/use-features"
 
 interface Subject {
   id: string
@@ -371,6 +373,7 @@ export default function SubjectsPage() {
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null)
   const [form, setForm] = useState(emptyForm)
   const { theme } = useTheme()
+   const { selectedFeatures } = useFeatures()
   const [focused, setFocused] = useState(false)
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
@@ -477,6 +480,14 @@ export default function SubjectsPage() {
   }, {})
 
   return (
+
+              <FeatureGate
+                featureKey="exams_grading"
+                featureName="Exams subjects and grading"
+                description="Manage exams and grading for each subject, including setting up subjects, creating exams, and recording student results."
+                selectedFeatures={selectedFeatures}
+              >
+
     <div className="space-y-4">
 
       {/* Header */}
@@ -837,5 +848,7 @@ export default function SubjectsPage() {
       />
 
     </div>
+
+    </FeatureGate>
   )
 }

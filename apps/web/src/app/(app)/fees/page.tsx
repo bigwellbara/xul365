@@ -678,6 +678,8 @@
 import React, { useState, useEffect, useRef } from "react"
 import { Search, Plus, ChevronRight, Receipt, DollarSign, CheckCircle, Clock, AlertCircle } from "lucide-react"
 import { useTheme } from "@/components/providers/theme-provider"
+import { FeatureGate } from "@/components/ui/feature-gate"
+import { useFeatures } from "@/hooks/use-features"
 
 interface Student {
   id: string
@@ -815,6 +817,7 @@ export default function FeesPage() {
   const [activeTab, setActiveTab] = useState<"all" | "unpaid" | "paid">("all")
   const [focused, setFocused] = useState(false)
   const { theme } = useTheme()
+  const { selectedFeatures } = useFeatures()
 
   const [studentQuery, setStudentQuery] = useState("")
   const [studentResults, setStudentResults] = useState<Student[]>([])
@@ -962,6 +965,13 @@ export default function FeesPage() {
   }
 
   return (
+
+       <FeatureGate
+            featureKey="fees_billing"
+            featureName="Fees and Billing"
+            description="Billing students and tracking their fees payment"
+            selectedFeatures={selectedFeatures}
+          >
     <div className="space-y-4">
 
       {/* Header */}
@@ -1358,5 +1368,6 @@ export default function FeesPage() {
       </div>
 
     </div>
+    </FeatureGate>
   )
 }

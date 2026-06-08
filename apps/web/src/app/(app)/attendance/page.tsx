@@ -386,6 +386,8 @@
 import React, { useState, useEffect } from "react"
 import { Search, ChevronRight, CheckCircle2, Users, CalendarCheck } from "lucide-react"
 import { useTheme } from "@/components/providers/theme-provider"
+import { FeatureGate } from "@/components/ui/feature-gate"
+import { useFeatures } from "@/hooks/use-features"
 
 interface Student {
   id: string
@@ -440,6 +442,7 @@ export default function AttendancePage() {
   const [search, setSearch] = useState("")
   const [focused, setFocused] = useState(false)
   const { theme } = useTheme()
+  const { selectedFeatures } = useFeatures()
 
   useEffect(() => {
     async function fetchClasses() {
@@ -523,6 +526,14 @@ export default function AttendancePage() {
   )
 
   return (
+
+    <FeatureGate
+    featureKey="attendance"
+    featureName="Attendance Tracking"
+    description="Record and monitor daily student attendance per class."
+    selectedFeatures={selectedFeatures}
+  >
+
     <div className="space-y-4">
 
       {/* Header */}
@@ -843,5 +854,6 @@ export default function AttendancePage() {
       </div>
 
     </div>
+    </FeatureGate>
   )
 }

@@ -653,6 +653,8 @@ import React, { useState, useEffect } from "react"
 import { Plus, Trash2, ClipboardList, Search, ChevronRight } from "lucide-react"
 import { ConfirmModal } from "@/components/ui/confirm-modal"
 import { useTheme } from "@/components/providers/theme-provider"
+import { FeatureGate } from "@/components/ui/feature-gate"
+import { useFeatures } from "@/hooks/use-features"
 
 interface Exam {
   id: string
@@ -743,6 +745,7 @@ export default function ExamsPage() {
   const [examForm, setExamForm] = useState(emptyExamForm)
   const [resultForm, setResultForm] = useState({ studentId: "", subjectId: "", marks: "", comments: "" })
   const { theme } = useTheme()
+  const { selectedFeatures } = useFeatures()
   const [focused, setFocused] = useState(false)
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
@@ -890,6 +893,13 @@ export default function ExamsPage() {
   }
 
   return (
+
+      <FeatureGate
+      featureKey="exams_grading"
+      featureName="Exams and Grading"
+      description="Manage exams and student results."
+      selectedFeatures={selectedFeatures}
+    >
     <div className="space-y-4">
 
       {/* Header */}
@@ -1341,5 +1351,6 @@ export default function ExamsPage() {
       />
 
     </div>
+    </FeatureGate>
   )
 }

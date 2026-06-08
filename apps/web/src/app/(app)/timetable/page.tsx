@@ -406,6 +406,8 @@ import React, { useState, useEffect } from "react"
 import { Plus, Trash2, CalendarDays, Search, ChevronRight, Clock } from "lucide-react"
 import { ConfirmModal } from "@/components/ui/confirm-modal"
 import { useTheme } from "@/components/providers/theme-provider"
+import { FeatureGate } from "@/components/ui/feature-gate"
+import { useFeatures } from "@/hooks/use-features"
 
 interface TimetableEntry {
   id: string
@@ -472,6 +474,7 @@ export default function TimetablePage() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const { theme } = useTheme()
+  const { selectedFeatures } = useFeatures()
   const [focused, setFocused] = useState(false)
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
@@ -597,6 +600,14 @@ export default function TimetablePage() {
   }, {})
 
   return (
+
+      <FeatureGate
+        featureKey="timetable"
+        featureName="Timetable Management"
+        description="Design timetables for each class by scheduling subjects into specific time slots throughout the week."
+        selectedFeatures={selectedFeatures}
+      >
+
     <div className="space-y-4">
 
       {/* Header */}
@@ -950,5 +961,6 @@ export default function TimetablePage() {
       />
 
     </div>
+    </FeatureGate>
   )
 }
