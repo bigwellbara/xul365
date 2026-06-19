@@ -679,7 +679,229 @@ import React, { useState, useEffect, useRef } from "react"
 import { Search, Plus, ChevronRight, Receipt, DollarSign, CheckCircle, Clock, AlertCircle } from "lucide-react"
 import { useTheme } from "@/components/providers/theme-provider"
 import { FeatureGate } from "@/components/ui/feature-gate"
+import {PostPaymentModal} from "@/components/ui/payment-modal"
 import { useFeatures } from "@/hooks/use-features"
+
+
+
+//invoice detail
+type PaymentMethod = "CASH" | "BANK_TRANSFER" | "MOBILE_MONEY" | "CHEQUE"
+type Currency = "USD" | "ZIG"
+
+interface Payment {
+  id: string
+  invoiceId: string
+  amountPaid: number
+  currency: string
+  method: string
+  reference: string
+  status: string
+  paidAt: string
+}
+
+const METHOD_LABELS: Record<PaymentMethod, string> = {
+  CASH: "Cash",
+  BANK_TRANSFER: "Bank Transfer",
+  MOBILE_MONEY: "Mobile Money",
+  CHEQUE: "Cheque",
+}
+
+function InvoiceDetail({
+  invoice,
+  theme,
+  onStatusChange,
+}: {
+  invoice: Invoice
+  theme: { primaryColor: string; primaryText: string }
+  onStatusChange: (id: string, status: Invoice["status"]) => void
+}) {
+  const [payments, setPayments] = useState<Payment[]>([])
+  const [totalPaid, setTotalPaid] = useState(0)
+  const [loadingPayments, setLoadingPayments] = useState(true)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [paymentError, setPaymentError] = useState("")
+
+  useEffect(() => {
+    setLoadingPayments(true)
+    setPayments([])
+    setTotalPaid(0)
+    setShowPaymentModal(false)
+    setPaymentError("")
+
+    fetch(`/api/invoices/${invoice.id}/payments`)
+      .then((r) => r.json())
+      .then((data: { payments: Payment[]; totalPaid: number }) => {
+        setPayments(data.payments ?? [])
+        setTotalPaid(data.totalPaid ?? 0)
+      })
+      .catch(() => {})
+      .finally(() => setLoadingPayments(false))
+  }, [invoice.id])
+
+  const balance = Number(invoice.totalAmountUsd) - totalPaid
+
+  return (
+    <div className="p-6 space-y-6">
+
+      {/* Header */}
+      <div className="flex items-start justify-between pb-5 border-b border-border">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
+            <Receipt size={24} style={{ color: theme.primaryColor }} />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-foreground">
+              Invoice #{invoice.id.slice(0, 8).toUpperCase()}
+            </h3>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {invoice.studentName ?? "Unknown"} · {invoice.gradeLevel?.replace(/_/g, " ")}
+            </p>
+            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border mt-2 ${STATUS_STYLES[invoice.status]}`}>
+              {React.createElement(STATUS_ICONS[invoice.status], { size: 11 })}
+              {invoice.status.charAt(0) + invoice.status.slice(1).toLowerCase()}
+            </span>
+          </div>
+        </div>
+        {invoice.status !== "PAID" && (
+          <button
+            type="button"
+            onClick={() => setShowPaymentModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md hover:opacity-90 transition-opacity"
+            style={{ backgroundColor: theme.primaryColor, color: theme.primaryText }}
+          >
+            <Plus size={14} />
+            Post payment
+          </button>
+        )}
+      </div>
+
+      {/* Balance summary */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: "Total billed", value: `$${Number(invoice.totalAmountUsd).toFixed(2)}` },
+          { label: "Total paid", value: `$${totalPaid.toFixed(2)}`, color: "#3b6d11" },
+          { label: "Balance due", value: `$${balance.toFixed(2)}`, color: balance > 0 ? "#a32d2d" : "#3b6d11" },
+        ].map(({ label, value, color }) => (
+          <div key={label} className="bg-muted/40 rounded-lg p-3">
+            <p className="text-xs text-muted-foreground mb-1">{label}</p>
+            <p className="text-base font-bold" style={color ? { color } : undefined}>{value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Invoice meta */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: "Term", value: invoice.term.replace("_", " ") },
+          { label: "Academic year", value: invoice.academicYear },
+          { label: "Due date", value: new Date(invoice.dueDate).toLocaleDateString() },
+        ].map(({ label, value }) => (
+          <div key={label} className="bg-muted/40 rounded-lg p-3">
+            <p className="text-xs text-muted-foreground mb-1">{label}</p>
+            <p className="text-sm font-medium text-foreground">{value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Fee breakdown */}
+      <div className="rounded-lg border border-border overflow-hidden">
+        <div className="px-4 py-2.5 bg-muted/40 border-b border-border flex items-center justify-between">
+          <h4 className="text-sm font-semibold text-foreground">Fee breakdown</h4>
+          <span className="text-xs text-muted-foreground">
+            {(invoice.items as InvoiceItem[]).length} item{(invoice.items as InvoiceItem[]).length !== 1 ? "s" : ""}
+          </span>
+        </div>
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-border">
+              <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Description</th>
+              <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Amount (USD)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(invoice.items as InvoiceItem[]).map((item, i) => (
+              <tr key={i} className={`border-b border-border last:border-0 ${i % 2 === 0 ? "bg-muted/20" : ""}`}>
+                <td className="px-4 py-3 text-sm text-foreground">{item.description}</td>
+                <td className="px-4 py-3 text-sm font-medium text-foreground text-right">
+                  ${Number(item.amountUsd).toFixed(2)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="bg-muted/40 border-t border-border">
+              <td className="px-4 py-3 text-sm font-semibold text-foreground">Total</td>
+              <td className="px-4 py-3 text-base font-bold text-right" style={{ color: theme.primaryColor }}>
+                ${Number(invoice.totalAmountUsd).toFixed(2)}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      {/* Payment history */}
+      <div className="rounded-lg border border-border overflow-hidden">
+        <div className="px-4 py-2.5 bg-muted/40 border-b border-border">
+          <h4 className="text-sm font-semibold text-foreground">Payment history</h4>
+        </div>
+        {loadingPayments ? (
+          <div className="p-4 space-y-2 animate-pulse">
+            {[1, 2].map((i) => <div key={i} className="h-10 bg-muted rounded" />)}
+          </div>
+        ) : payments.length === 0 ? (
+          <div className="p-6 text-center">
+            <p className="text-sm text-muted-foreground">No payments recorded yet</p>
+          </div>
+        ) : (
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Date</th>
+                <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Reference</th>
+                <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Method</th>
+                <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {payments.map((p, i) => (
+                <tr key={p.id} className={`border-b border-border last:border-0 ${i % 2 === 0 ? "bg-muted/20" : ""}`}>
+                  <td className="px-4 py-3 text-sm text-foreground">
+                    {new Date(p.paidAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-foreground font-mono">{p.reference}</td>
+                  <td className="px-4 py-3 text-sm text-foreground">
+                    {METHOD_LABELS[p.method as PaymentMethod] ?? p.method}
+                  </td>
+                  <td className="px-4 py-3 text-sm font-semibold text-foreground text-right">
+                    {p.currency} {Number(p.amountPaid).toFixed(2)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Payment modal — rendered HERE at the bottom of InvoiceDetail */}
+      {showPaymentModal && (
+        <PostPaymentModal
+          invoice={invoice}
+          totalPaid={totalPaid}
+          onClose={() => setShowPaymentModal(false)}
+          onPaymentPosted={(payment, newStatus, newTotal) => {
+            setPayments((prev) => [payment, ...prev])
+            setTotalPaid(newTotal)
+            onStatusChange(invoice.id, newStatus as Invoice["status"])
+            setShowPaymentModal(false)
+          }}
+        />
+      )}
+
+    </div>
+  )
+}
+
+//end of invoice detail
 
 interface Student {
   id: string
@@ -801,6 +1023,10 @@ function FeeStatCard({
           <p className="text-2xl font-semibold text-foreground">{value}</p>
         </div>
       </div>
+
+
+
+
     </div>
   )
 }
@@ -1264,92 +1490,18 @@ export default function FeesPage() {
           )}
 
           {/* Invoice detail */}
-          {!showForm && selected && (
-            <div className="p-6 space-y-6">
-
-              {/* Header */}
-              <div className="flex items-start justify-between pb-5 border-b border-border">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Receipt size={24} style={{ color: theme.primaryColor }} />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-foreground">
-                      Invoice #{selected.id.slice(0, 8).toUpperCase()}
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      {selected.studentName ?? "Unknown"} · {selected.gradeLevel?.replace(/_/g, " ")}
-                    </p>
-                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border mt-2 ${STATUS_STYLES[selected.status]}`}>
-                      {React.createElement(STATUS_ICONS[selected.status], { size: 11 })}
-                      {selected.status.charAt(0) + selected.status.slice(1).toLowerCase()}
-                    </span>
-                  </div>
-                </div>
-                {selected.status !== "PAID" && (
-                  <button
-                    type="button"
-                    onClick={() => void markAsPaid(selected.id)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-green-700 border border-green-200 rounded-md hover:bg-green-50 transition-colors"
-                  >
-                    <CheckCircle size={14} />
-                    Mark as paid
-                  </button>
-                )}
-              </div>
-
-              {/* Invoice info cards */}
-              <div className="grid grid-cols-3 gap-4">
-                {[
-                  { label: "Term", value: selected.term.replace("_", " ") },
-                  { label: "Academic year", value: selected.academicYear },
-                  { label: "Due date", value: new Date(selected.dueDate).toLocaleDateString() },
-                ].map(({ label, value }) => (
-                  <div key={label} className="bg-muted/40 rounded-lg p-3">
-                    <p className="text-xs text-muted-foreground mb-1">{label}</p>
-                    <p className="text-sm font-medium text-foreground">{value}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Fee breakdown */}
-              <div className="rounded-lg border border-border overflow-hidden">
-                <div className="px-4 py-2.5 bg-muted/40 border-b border-border flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-foreground">Fee breakdown</h4>
-                  <span className="text-xs text-muted-foreground">
-                    {(selected.items as InvoiceItem[]).length} item{(selected.items as InvoiceItem[]).length !== 1 ? "s" : ""}
-                  </span>
-                </div>
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Description</th>
-                      <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Amount (USD)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(selected.items as InvoiceItem[]).map((item, i) => (
-                      <tr key={i} className={`border-b border-border last:border-0 ${i % 2 === 0 ? "bg-muted/20" : ""}`}>
-                        <td className="px-4 py-3 text-sm text-foreground">{item.description}</td>
-                        <td className="px-4 py-3 text-sm font-medium text-foreground text-right">
-                          ${Number(item.amountUsd).toFixed(2)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr className="bg-muted/40 border-t border-border">
-                      <td className="px-4 py-3 text-sm font-semibold text-foreground">Total</td>
-                      <td className="px-4 py-3 text-base font-bold text-right" style={{ color: theme.primaryColor }}>
-                        ${Number(selected.totalAmountUsd).toFixed(2)}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-
-            </div>
-          )}
+       {!showForm && selected && (
+  <InvoiceDetail
+    invoice={selected}
+    theme={theme}
+    onStatusChange={(id, status) => {
+      setInvoices((prev) =>
+        prev.map((inv) => inv.id === id ? { ...inv, status } : inv)
+      )
+      setSelected((prev) => prev ? { ...prev, status } : prev)
+    }}
+  />
+)}
 
           {/* Empty state */}
           {!showForm && !selected && (
