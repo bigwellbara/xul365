@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from "next/server"
 
 // Routes that do not need authentication
-const publicRoutes = ["/login", "/register", "/onboarding"]
+const publicRoutes = ["/","/login", "/register", "/onboarding"]
 
 // Routes that are only for guests (redirect to dashboard if logged in)
 const guestRoutes = ["/login", "/register"]
